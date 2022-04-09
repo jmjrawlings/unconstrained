@@ -1,0 +1,57 @@
+{
+    "name": "unconstrained",
+    "context": "..",
+    "dockerFile": "Dockerfile",
+    "settings": {
+        
+        // Python location
+        "python.pythonPath": "/opt/venv/bin",
+        "python.disableInstallationCheck": true,
+                
+        // Typechecking and linting
+        "python.languageServer": "Pylance",
+        "python.linting.enabled": true,
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.diagnosticSeverityOverrides": {
+            "reportUnboundVariable" : "information", 
+            "reportImplicitStringConcatenation" : "warning" 
+        },
+
+        // Pytest integration
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        "python.testing.unittestEnabled": false,
+        "python.testing.nosetestsEnabled": false,
+
+        // Browser hot-reload of book
+        "liveServer.settings.root": "/book/_build/html",
+        
+        // Zsh Shell
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+            "zsh": {
+              "path": "/bin/zsh",
+              "args": ["-l"]
+            }
+          },
+
+        // Misc
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "telemetry.enableTelemetry": false,
+        "telemetry.telemetryLevel" : 0,
+
+    },
+
+    "extensions": [
+		"ms-python.python",
+		"ms-toolsai.jupyter",
+		"dekkerone.minizinc",
+        "ritwickdey.liveserver"
+	],
+    
+    "runArgs": [ 
+        "--hostname", "host"
+    ]
+
+}
