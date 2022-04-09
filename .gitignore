@@ -1,5 +1,6 @@
 .temp
-output/*.html
+unconstrained/examples/*/output/*.*
+!unconstrained/examples/*/output/.gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
