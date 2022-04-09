@@ -8,8 +8,6 @@ from uuid import uuid4
 import attr
 import cattr
 import pendulum as pn
-from altair import datum, Chart
-import altair as alt
 from pendulum import date, datetime, duration, now, period, today
 from pendulum.date import Date
 from pendulum.datetime import DateTime
@@ -20,6 +18,7 @@ import logging
 from rich.logging import RichHandler
 from rich import print
 import pandas as pd
+
 DF = pd.DataFrame
 T = TypeVar("T")
 E = TypeVar("E", bound=Enum)
@@ -366,20 +365,22 @@ def to_existing_filepath(value) -> Path:
     return to_filepath(value, existing=True)
 
 
-def load_json(path) -> dict:
+def read_json(path) -> dict:
+    """ Read JSON file as dict """
     path = to_existing_filepath(path)
     text = path.read_text()
     data = json.loads(text)
     return data
 
 
-def save_json(data, path, **kwargs):
+def write_json(data, path, **kwargs):
     path_ = to_filepath(path)
     with path_.open("w") as f:
         json.dump(data, f, **kwargs)
 
 
-def load_text(path) -> str:
+def read_text(path) -> str:
+    """ Read file as text """
     path = to_existing_filepath(path)
     text = path.read_text()
     return text
