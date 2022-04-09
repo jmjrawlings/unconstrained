@@ -295,11 +295,14 @@ async def solve_minizinc_model(
                     status = SolveStatus.ERROR
 
                 result.status = status
+
+                for key,value in statistics.items():
+                    log.debug(f'"{name}" exited with {key} = {value}')
+
                 log.log(
                     logging.INFO if status.has_solution else logging.ERROR,
                     f'"{name}" exited with status "{status.name}" after {result.elapsed}'
                 )
-                log.debug(statistics)
                 break
 
             # An intermediate solution has been given

@@ -318,8 +318,6 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : MiniZincOpt
             project.score = result['project_score', i]
             project.late  = result['project_late', i]
             project.score = result['project_score', i]
-                                                                                                            
-            log.debug(f'{project.name} goes from {project.start} -> {project.end}')
                                                                                     
             for role in project.roles:
                 i = role.role_id - 1
@@ -334,8 +332,6 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : MiniZincOpt
                 role.staff.roles += role
                 role.staff.projects += project
                 project.staff += role.staff
-                
-                log.debug(f'{project.name} | {role.skill.name} | {role.role_id} | {role.staff.name} from {role.start} -> {role.end}')
 
 
         yield result

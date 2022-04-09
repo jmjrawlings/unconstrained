@@ -58,8 +58,13 @@ ATTRS = dict(
     str=False
 )
 
+
 class HasId:
-            
+    """
+    Object has a unique identifier for
+    equality and sorting
+    """
+                    
     def get_id(self):
         return self.id
 
@@ -73,6 +78,7 @@ class HasId:
 
         if not hasattr(other, "get_id"):
             return False
+
         a_id = self.get_id()
         b_id = other.get_id()
         return a_id == b_id
@@ -97,7 +103,6 @@ class HasId:
 
     def __ge__(self, other):
         return self.get_sort_key() >= other.get_sort_key()
-
 
 
 def to_int(value: Any = None) -> int:
@@ -440,8 +445,10 @@ def period_field(**kwargs):
 def datetime_field(**kwargs):
     return make_field(DateTime, None, converter=to_datetime, factory=now, **kwargs)
 
+
 def object_field(cls, **kwargs):
     return make_field(cls, None, **kwargs)
+
 
 def dict_field(**kwargs):
     return make_field(dict, dict(), dict, **kwargs)
