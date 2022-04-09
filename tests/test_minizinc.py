@@ -27,3 +27,23 @@ async def test_solve_simple_optimise_model(minizinc_options):
     assert result.status == SolveStatus.OPTIMAL
     assert result['b'] == 10
     assert result['a'] == 1
+
+
+async def test_solve_with_timeout_fails(minizinc_options : MiniZincOptions):
+    minizinc_options.time_limit = to_duration(microseconds=1)
+                
+    result = await best_minizinc_solution(
+        """
+        include "disjunctive.mzn";
+        set of int: TASK = 1..1000;
+        set of int: TIME = 1..1000;
+                                        
+        array[TASK] of var TIME: start;
+        array[TASK] of var TIME: duration;
+
+        constraint disjunctive(start, duration);
+        """,
+        minizinc_options
+        )
+
+    assert result.status == SolveStatus.TIMEOUT

@@ -48,7 +48,7 @@ Discover a repeatable and productive approaches to:
 - [Discrete Algorithms Course](https://www.coursera.org/learn/solving-algorithms-discrete-optimization)
 - [Google OR-Tools](https://developers.google.com/optimization)
 - [Google OR-Tools GitHub](https://github.com/google/or-tools)
-
+- [Google OR-Tools Manual](https://acrogenesis.com/or-tools/documentation/user_manual/)
 
 ### Python
 - [Altair](https://altair-viz.github.io/)
