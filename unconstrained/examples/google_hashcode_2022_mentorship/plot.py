@@ -1,5 +1,6 @@
 from ...prelude import *
 import altair as alt
+from altair import datum, Chart
 from .model import Scenario
 
 
@@ -29,7 +30,11 @@ def get_records(scenario : Scenario):
 
 
 
-def plot_scenario(scenario : Scenario, solutions=[], width = 600):
+def plot_scenario(
+        scenario : Scenario,
+        solutions=[], 
+        width = 600, 
+        path : Optional[Path] = None) -> Chart:
     records = list(get_records(scenario))
     inline = alt.InlineData(name='data', values=records)
     frame = DF.from_records(records)
@@ -100,5 +105,8 @@ def plot_scenario(scenario : Scenario, solutions=[], width = 600):
             width=width
         )
     )
+
+    if path:
+        chart.save(path)
 
     return chart

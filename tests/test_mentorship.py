@@ -32,8 +32,7 @@ async def test_solve_with_static_minizinc(scenario, minizinc_options):
     async for result in solve_with_static_minizinc(scenario, minizinc_options):
         pass
 
-    chart = plot_scenario(scenario)    
-    chart.save(output_dir / f'{scenario.name}.vg.html')
+    chart = plot_scenario(scenario, path=output_dir / f'{scenario.name}.vg.html')
         
 
 async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
@@ -41,8 +40,7 @@ async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
     async for result in solve_with_dynamic_minizinc(scenario, minizinc_options):
         pass
 
-    chart = plot_scenario(scenario)
-    chart.save(output_dir / f'{scenario.name}.vg.html')
+    chart = plot_scenario(scenario, path = output_dir / f'{scenario.name}.vg.html')
 
 
 async def test_solve_with_ortools(scenario):
