@@ -3,12 +3,12 @@ from pytest import mark, fixture, param
 
 def get_filenames():
     yield param('a_an_example')
-    yield param('b_better_start_small', marks=mark.skip)
-    yield param('c_collaboration', marks=mark.skip)
-    yield param('d_dense_schedule', marks=mark.skip)
-    yield param('e_exceptional_skills', marks=mark.skip)
-    yield param('f_find_great_mentors', marks=mark.skip)
-
+    # yield param('b_better_start_small')
+    # yield param('c_collaboration')
+    # yield param('d_dense_schedule')
+    # yield param('e_exceptional_skills')
+    # yield param('f_find_great_mentors')
+   
 
 @fixture(params=list(get_filenames()))
 def filename(request):
@@ -44,4 +44,5 @@ async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
 
 
 async def test_solve_with_ortools(scenario):
-    pass
+    for result in solve_with_ortools(scenario):
+        pass

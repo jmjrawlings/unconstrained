@@ -65,11 +65,11 @@ class Role(HasId):
     """
     References
     """
-    staff  : Optional[Contributor] = None
-    mentor : Optional[Contributor] = None
-    skill  : Skill = None # type:ignore
-
-                
+    project : "Project" = None # type:ignore
+    skill   : Skill = None # type:ignore
+    staff   : Optional[Contributor] = None
+    mentor  : Optional[Contributor] = None
+                    
     def get_id(self):
         return self.role_id
 
@@ -210,6 +210,7 @@ def load_scenario(path) -> Scenario:
                     level = level
                 )
                 role.skill = skill
+                role.project = project
                 project.roles += role
                 scenario.roles += role
 
