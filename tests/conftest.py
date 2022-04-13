@@ -18,19 +18,18 @@ THREADS = [
 
 
 @fixture(params=SOLVERS)
-def solver(request) -> Solver:
+def minizinc_solver(request) -> Solver:
     return get_solver(request.param)
 
 
-
 @fixture(params=THREADS)
-def threads(request) -> int:
+def minizinc_threads(request) -> int:
     return request.param
 
 
 @fixture
-def minizinc_options(solver, threads):
+def minizinc_options(minizinc_solver, minizinc_threads):
     return MiniZincOptions(
-        solver_id = solver.id,
-        threads = threads
+        solver_id = minizinc_solver.id,
+        threads = minizinc_threads
     )

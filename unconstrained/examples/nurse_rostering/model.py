@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import AT
 from ...prelude import *
 
 @attr.s(**ATTRS)
@@ -10,7 +9,7 @@ class Nurse(HasId):
     shift_ids : TList[int] = list_field(int)
         
     # References
-    shifts : "Shifts" = None
+    shifts : "Shifts"
     
     def get_id(self):
         return self.nurse_id
@@ -31,7 +30,7 @@ class Shift(HasId):
     nurse_id : int = int_field()
 
     # References
-    day : "Day" = None
+    day : "Day"
                 
     def get_id(self):
         return self.shift_id
@@ -48,7 +47,7 @@ class Day(HasId):
     shift_ids : TList[int] = list_field(int)
     
     # References
-    shifts : Shifts = None
+    shifts : Shifts
     
 
 class Days(Map[int,Day]):
@@ -59,3 +58,8 @@ class Scenario:
     nurses : Nurses = map_field(Nurses)
     days : Days = map_field(Days)
     shifts : Shifts = map_field(Shifts)
+
+
+
+def load_scenario() -> Scenario:
+    pass
