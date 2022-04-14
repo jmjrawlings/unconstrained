@@ -2,6 +2,12 @@
 build-book: FORCE
 	jupyter-book build book
 
+# Open Jupyer Lab
+jupyter: FORCE
+	jupyter lab \
+		--allow-root \
+		--notebook-dir ./unconstrained/examples
+
 
 # Build the Book when source files change
 watch-book:

@@ -1,4 +1,4 @@
-from unconstrained.examples.google_hashcode_2022_mentorship import *
+from unconstrained.examples.project_planning import *
 from pytest import mark, fixture, param
 
 def get_filenames():

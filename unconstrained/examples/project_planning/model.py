@@ -1,5 +1,3 @@
-from abc import abstractclassmethod, abstractmethod
-from typing import Generic
 from ...prelude import *
 from altair import Chart
 
