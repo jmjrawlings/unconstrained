@@ -8,4 +8,4 @@ def plot_scenario(
         solutions=[], 
         width = 600, 
         path : Optional[Path] = None) -> Chart:
-    return Chart()        
+    return Chart()
