@@ -2,22 +2,22 @@ package main
 
 import (
   "dagger.io/dagger"
-  "dagger.io/dagger/core"
+//   "dagger.io/dagger/core"
+//   "universe.dagger.io/bash"
 )
 
 dagger.#Plan & {
 
-    client:
+    client: {
         filesystem:
-        ".": 
-            read: {
-                contents: dagger.#FS
-            }
-
-    actions:
-        test: core.#Exec & {
-            args: ["echo", "test"]
-            user: ""
-            input: client.filesystem.".".read.contents
+            ".": read: contents: dagger.#FS
+        commands:
+            pytest: name: "pytest"
+    }
+    
+    actions: {
+        test: {
+            result: client.commands.pytest.stdout            
+        }
     }
 }

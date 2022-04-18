@@ -68,4 +68,4 @@ Arrive on a repeatable and productive approach to:
 - [VSCode Devcontainer](https://code.visualstudio.com/docs/remote/containers)
 - [Dagger](https://dagger.io/)
 - [Dagger Docs](https://docs.dagger.io/)
-- [CUE](https://cuelang.org/)
+- [CUE Lang](https://cuelang.org/)
