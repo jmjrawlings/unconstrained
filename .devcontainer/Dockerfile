@@ -1,7 +1,7 @@
 # Major dependency versions
-ARG MINIZINC_VERSION=2.5.5
-ARG ORTOOLS_VERSION=9.2
-ARG ORTOOLS_BUILD=9972
+ARG MINIZINC_VERSION=2.6.2
+ARG ORTOOLS_VERSION=9.3
+ARG ORTOOLS_BUILD=10497
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG MINIZINC_HOME=/usr/local/share/minizinc
@@ -125,4 +125,4 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Dagger
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
-RUN ./bin/dagger /usr/local/bin
+RUN mv ./bin/dagger /usr/local/bin
