@@ -23,6 +23,9 @@ Discover a repeatable and productive approaches to:
 - serialize/deserialize
 - development environment
 - python packages
+- CI/CD
+- user facing application
+- database integration
 
 
 ## Non-Goals
