@@ -16,7 +16,7 @@ dagger.#Plan & {
 
     actions:
         test: core.#Exec & {
-            args: ["echo", "xd"]
+            args: ["echo", "test"]
             user: ""
             input: client.filesystem.".".read.contents
     }

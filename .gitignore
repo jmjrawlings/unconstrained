@@ -1,4 +1,5 @@
 .temp
+unconstrained/book/_build
 unconstrained/examples/*/output/*.*
 !unconstrained/examples/*/output/.gitignore
 

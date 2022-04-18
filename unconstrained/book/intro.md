@@ -1,7 +1,7 @@
 # Unconstrained
 
 A guided introduction into the world of Constraint Programming in Python.
-
+  
 Constraint Programming (CP) is an 
 immensely powerful paradigm that can and is used to solve seriously hard real world problems.  At it's best, CP allows the programmer to describe a problem, and have the best solution returned to them.
 
