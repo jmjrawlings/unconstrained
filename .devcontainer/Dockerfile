@@ -125,4 +125,4 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Dagger
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
-# RUN dagger completion zsh > "${fpath[1]}/_dagger"
+RUN ./bin/dagger /usr/local/bin
