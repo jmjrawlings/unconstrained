@@ -1,7 +1,11 @@
 .temp
 unconstrained/examples/*/output/*.*
 !unconstrained/examples/*/output/.gitignore
-cue.mod/pkg/**/*.*
+
+.docker/
+
+# Cue imported dependencies
+cue.mod/pkg/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
