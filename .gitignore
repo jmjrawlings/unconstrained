@@ -4,9 +4,6 @@ unconstrained/examples/*/output/*.*
 
 .docker/
 
-# Cue imported dependencies
-cue.mod/pkg/
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

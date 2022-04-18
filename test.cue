@@ -2,13 +2,22 @@ package main
 
 import (
   "dagger.io/dagger"
-//   "dagger.io/dagger/core"
+  "dagger.io/dagger/core"
 )
 
 dagger.#Plan & {
 
-    actions: 
-        echo:
-            msg: "xd"
+    client:
+        filesystem:
+        ".": 
+            read: {
+                contents: dagger.#FS
+            }
 
+    actions:
+        test: core.#Exec & {
+            args: ["echo", "xd"]
+            user: ""
+            input: client.filesystem.".".read.contents
+    }
 }
