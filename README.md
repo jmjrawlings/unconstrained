@@ -13,24 +13,26 @@ This is a personal workspace to test out ideas, packages and tools in the pursui
 
 
 ## Goals
-Discover a repeatable and productive approaches to:
+Arrive on a repeatable and productive approach to:
 - modelling problems
 - compiling models
 - solving models
 - comparing models
 - visualising solutions
+- interactive frontned
 - evaluating solver performance
 - serialize/deserialize
 - development environment
-- python packages
-- CI/CD
-- user facing application
+- python package management
+- local and remote CI/CD
 - database integration
 
 
 ## Non-Goals
 - a production ready minizinc model builder
 - a production ready anything
+- a reusable python package
+- a 'framework'
 - comprehensive documentation
 - backwards compatibility
 
@@ -53,6 +55,7 @@ Discover a repeatable and productive approaches to:
 - [Google OR-Tools GitHub](https://github.com/google/or-tools)
 - [Google OR-Tools Manual](https://acrogenesis.com/or-tools/documentation/user_manual/)
 
+
 ### Python
 - [Altair](https://altair-viz.github.io/)
 - [Pytest](https://docs.pytest.org/en/latest/)
@@ -63,3 +66,6 @@ Discover a repeatable and productive approaches to:
 ### Development
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [VSCode Devcontainer](https://code.visualstudio.com/docs/remote/containers)
+- [Dagger](https://dagger.io/)
+- [Dagger Docs](https://docs.dagger.io/)
+- [CUE](https://cuelang.org/)
