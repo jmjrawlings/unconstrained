@@ -25,7 +25,7 @@
 
         // Browser hot-reload of book
         "liveServer.settings.root": "/book/_build/html",
-        
+                
         // Zsh Shell
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {

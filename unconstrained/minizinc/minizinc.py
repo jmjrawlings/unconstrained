@@ -248,7 +248,7 @@ async def solve_minizinc_model(
             mz_status = mz_result.status
                                     
             if flat_time := statistics.get('flatTime'):
-                result.compile_time = to_duration(flat_time)
+                result.compile_time = to_duration(seconds=flat_time)
 
             result = MiniZincResult(
                 name            = name,
@@ -378,9 +378,9 @@ async def solve_minizinc_model(
 
 
 async def best_minizinc_solution(
-        model   : str,
-        options : MiniZincOptions,
-        name    : str = 'model',
+        model_string : str,
+        options      : MiniZincOptions,
+        name         : str = 'model',
         **parameters
         ) -> MiniZincResult:
     """
@@ -389,10 +389,10 @@ async def best_minizinc_solution(
     Equivalent to running `solve_model` and ignoring
     intermediate solutions
     """
-    
+        
     result = MiniZincResult()
             
-    async for result in solve_minizinc_model(model, name=name, options=options, **parameters):
+    async for result in solve_minizinc_model(model_string, name=name, options=options, **parameters):
         pass
     
     return result
