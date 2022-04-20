@@ -1,5 +1,5 @@
-from typing import AsyncIterator
 from ..prelude import *
+from typing import AsyncIterator
 from datetime import timedelta
 from minizinc import Method
 from minizinc import Model as MzModel
@@ -244,11 +244,12 @@ async def solve_minizinc_model(
             free_search = '-f' in solver.stdFlags and options.free_search,
             processes = '-p' in solver.stdFlags and options.threads
         ):
-            statistics : Statistics = mz_result.statistics
+            statistics : Statistics = mz_result.statistics #type:ignore
             mz_status = mz_result.status
-                                    
-            if flat_time := statistics.get('flatTime'):
-                result.compile_time = to_duration(seconds=flat_time)
+            
+            if 'flatTime' in statistics:
+                flat_time = statistics['flatTime']
+                result.compile_time = to_duration(flat_time)
 
             result = MiniZincResult(
                 name            = name,
@@ -297,7 +298,7 @@ async def solve_minizinc_model(
                 result.status = status
 
                 for key,value in statistics.items():
-                    log.debug(f'"{name}" exited with {key} = {value}')
+                    log.debug(f'"{name}" {key} = {value}')
 
                 log.log(
                     logging.INFO if status.has_solution else logging.ERROR,
