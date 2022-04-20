@@ -10,6 +10,6 @@
             "request": "attach",
             "module": "pytest",
             "cwd": "${workspaceFolder}",
-            "justMyCode": false
+            "justMyCode": true
         }]
 }

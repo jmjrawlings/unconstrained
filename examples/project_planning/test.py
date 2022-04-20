@@ -1,5 +1,7 @@
+from unconstrained import *
 from examples.project_planning import *
 from pytest import mark, fixture, param
+
 
 def get_filenames():
     yield param('a_an_example')
@@ -26,6 +28,10 @@ def filepath(filename):
 def scenario(filepath) -> Scenario:
     return load_scenario(filepath)
         
+@fixture
+def minizinc_options():
+    return MiniZincOptions()
+
 
 async def test_solve_with_static_minizinc(scenario, minizinc_options):
 

@@ -1,5 +1,10 @@
+from unconstrained import *
 from examples.nurse_rostering import *
 from pytest import mark, fixture, param
+
+@fixture
+def minizinc_options():
+    return MiniZincOptions()
 
 
 @fixture
