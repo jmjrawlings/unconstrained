@@ -47,7 +47,8 @@
 		"ms-python.python",
 		"ms-toolsai.jupyter",
 		"dekkerone.minizinc",
-        "ritwickdey.liveserver"
+        "ritwickdey.liveserver",
+        "nickgo.cuelang"
 	],
     
     "runArgs": [ 

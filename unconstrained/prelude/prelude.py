@@ -26,10 +26,12 @@ E = TypeVar("E", bound=Enum)
 def uuid():
     return str(uuid4())
 
-converter = cattr.GenConverter()
+converter = cattr.GenConverter() 
 unstructure = converter.unstructure
 
 log = logging.getLogger('unconstrained')
+# log = logging.getLogger('root')
+
 log.setLevel(logging.DEBUG)
 log.addHandler(
     RichHandler(

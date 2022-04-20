@@ -3,8 +3,8 @@ Solve the scenario using a static minizinc model with
 data passed through as a dzn file.
 """
 
+from unconstrained import *
 from .model import *
-from ...minizinc import *
 
 model_string = """
 % ==== Google Hash Code 2022 =====================================================

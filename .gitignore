@@ -1,7 +1,5 @@
-.temp
-
 # Jupyer book output
-unconstrained/book/_build
+book/_build
 
 # Test output
 unconstrained/examples/*/output/*.*

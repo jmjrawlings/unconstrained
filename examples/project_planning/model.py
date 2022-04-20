@@ -1,4 +1,4 @@
-from ...prelude import *
+from unconstrained import *
 from altair import Chart
 
 input_dir  : Path  = to_existing_filepath(__file__).parent / 'input'

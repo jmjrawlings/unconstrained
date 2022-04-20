@@ -181,26 +181,24 @@ async def solve_minizinc_model(
         model_string : str,
         options : MiniZincOptions,
         name    : str = 'model',
+        debug_path : Union[Path, str] = '/tmp',
         **parameters
         ) -> AsyncIterator[MiniZincResult]:
 
     import math
     
     solver = get_solver(options.solver_id)
-                
-    # Create the MiniZinc Model with our string and params                                
-    model = MzModel()
-    model.add_string(model_string)
-    for param, value in parameters.items():
-        model[param] = value
 
     # Initial solution
     result = MiniZincResult(name=name)
     
     # Create the MiniZinc Instance
     try:
-        instance = MzInstance(solver, model)
-                                        
+        instance = MzInstance(solver)
+        instance.add_string(model_string)
+        for param, value in parameters.items():
+            instance[param] = value
+                                            
         with instance.files() as files:
             for file in files:
                 result.model_string += '\n'
@@ -209,7 +207,10 @@ async def solve_minizinc_model(
         result.method = instance.method
         result.status = SolveStatus.FEASIBLE
         variables = set((instance.output or {}).keys())
-        variables.remove('_checker')        
+
+        if '_checker' in variables:
+            variables.remove('_checker')
+
         
     # Most likely syntax error
     except Exception as e:
@@ -222,13 +223,12 @@ async def solve_minizinc_model(
 
     # Write generate model out for debugging  
     model_filename = to_filename(name)
-    model_file = Path(f'.temp/{model_filename}.mzn')
-    # debug_file = Path(f'.temp/{model_filename}.txt')
-        
+    model_folder = to_directory(debug_path, create=True)
+    model_file = model_folder / f'{model_filename}.mzn'
     model_file.write_text(result.model_string)
     result.model_file = str(model_file)
     log.debug(f'"{result.name}" written to {result.model_file}')
-    
+        
     if instance is None:
         yield result
         return

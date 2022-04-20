@@ -4,8 +4,8 @@ their CP-SAT solver
 """
 
 
+from unconstrained import *
 from .model import *
-from ...minizinc import *
 from ortools.sat.python import cp_model
 
 

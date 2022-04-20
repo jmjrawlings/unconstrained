@@ -1,4 +1,4 @@
-from ...prelude import *
+from unconstrained import *
 import altair as alt
 from altair import datum, Chart
 from .model import Scenario

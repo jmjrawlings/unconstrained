@@ -61,6 +61,7 @@ Arrive on a repeatable and productive approach to:
 - [Pytest](https://docs.pytest.org/en/latest/)
 - [Attrs](https://www.attrs.org/en/stable/)
 - [Cattrs](https://cattrs.readthedocs.io/en/latest/)
+- [SqlModel](https://github.com/tiangolo/sqlmodel)
 
 
 ### Development

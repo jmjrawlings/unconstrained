@@ -1,2 +1,2 @@
 #!/bin/bash
-jupyter-book build unconstrained/book
+jupyter-book build book

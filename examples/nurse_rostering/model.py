@@ -1,4 +1,4 @@
-from ...prelude import *
+from unconstrained import *
 
 @attr.s(**ATTRS)
 class Nurse(HasId):

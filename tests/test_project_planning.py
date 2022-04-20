@@ -1,4 +1,4 @@
-from unconstrained.examples.project_planning import *
+from examples.project_planning import *
 from pytest import mark, fixture, param
 
 def get_filenames():
@@ -33,6 +33,7 @@ async def test_solve_with_static_minizinc(scenario, minizinc_options):
         pass
 
     chart = plot_scenario(scenario, path=output_dir / f'{scenario.name}.vg.html')
+    assert result.status.has_solution
         
 
 async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
@@ -41,8 +42,10 @@ async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
         pass
 
     chart = plot_scenario(scenario, path = output_dir / f'{scenario.name}.vg.html')
+    assert result.status.has_solution
 
 
 async def test_solve_with_ortools(scenario):
     for result in solve_with_ortools(scenario):
         pass
+    

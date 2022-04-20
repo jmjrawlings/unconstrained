@@ -5,6 +5,7 @@ ARG ORTOOLS_BUILD=10497
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG MINIZINC_HOME=/usr/local/share/minizinc
+ARG DEBIAN_FRONTEND=noninteractive
 
 # ===============================
 # MiniZinc + ORTools Solver Layer
@@ -19,25 +20,24 @@ ENV ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v${ORTOOLS
 ENV ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_TAR_NAME}.tar.gz
 ENV ORTOOLS_HOME=${MINIZINC_HOME}/ortools
 ENV ORTOOLS_MSC=${MINIZINC_HOME}/solvers/ortools.msc
+ARG DEBIAN_FRONTEND
 
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 # Install OR-Tools into MiniZinc directory
 RUN mkdir ${ORTOOLS_HOME} && \
     wget -c ${ORTOOLS_TAR_URL} -O - | \
     tar -xz -C ${ORTOOLS_HOME} --strip-components=1
 
-# Install OR-Tools solver configuration file
+# Register OR-Tools as a MiniZinc solver
 RUN echo '{ \n\
     "id": "org.ortools.ortools", \n\
     "name": "OR Tools", \n\
     "description": "Or Tools FlatZinc executable", \n\
-    "version": "9.2/stable", \n\
+    "version": "9.3/stable", \n\
     "mznlib": "../ortools/share/minizinc", \n\
     "executable": "../ortools/bin/fzn-or-tools",     \n\
     "tags": ["cp","int", "lcg", "or-tools"], \n\
@@ -49,7 +49,7 @@ RUN echo '{ \n\
     "needsStdlibDir": false, \n\
     "isGUIApplication": false \n\
     }' >> ${ORTOOLS_MSC}
-
+    
 
 # ===============================
 # Main OS
@@ -59,11 +59,10 @@ FROM ubuntu:${UBUNTU_VERSION}
 
 # Install Python3 + helpful packages
 ARG PYTHON_VERSION
+ARG DEBIAN_FRONTEND
 ENV PYTHON_NAME=python$PYTHON_VERSION
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
+
+RUN apt-get update && apt-get install -y \
     $PYTHON_NAME \
     $PYTHON_NAME-dev \
     $PYTHON_NAME-venv \
@@ -82,7 +81,7 @@ RUN apt-get update \
     fonts-powerline \
     inotify-tools \
     htop \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN apt-get update \
@@ -114,7 +113,7 @@ RUN pip install pip-tools
 RUN pip-compile requirements.in
 RUN pip-sync requirements.txt
 
-# Install zsh terminal
+# Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.2/zsh-in-docker.sh)" -- \
     -p git \
@@ -124,5 +123,5 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     && bash -c 'zsh -is <<<exit &>/dev/null'
 
 # Install Dagger
-RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
-RUN mv ./bin/dagger /usr/local/bin
+RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
+    mv ./bin/dagger /usr/local/bin
