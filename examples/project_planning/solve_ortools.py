@@ -33,11 +33,11 @@ def solve_with_ortools(scenario : Scenario):
     callback = SolutionCallback(scenario)
     solver.Solve(model, callback)
     
-    log.info(f'"{scenario.name} - {solver.NumConflicts()} conflicts')
-    log.info(f'"{scenario.name} - {solver.NumBranches()} branches')
-    log.info(f'"{scenario.name} - {solver.NumBooleans()} booleans')
-    log.info(f'"{scenario.name} - {callback.iteration} Solutions')
-    log.info(f'"{scenario.name} - {solver.StatusName()}')
+    log.debug(f'"{scenario.name} - {solver.NumConflicts()} conflicts')
+    log.debug(f'"{scenario.name} - {solver.NumBranches()} branches')
+    log.debug(f'"{scenario.name} - {solver.NumBooleans()} booleans')
+    log.debug(f'"{scenario.name} - {callback.iteration} Solutions')
+    log.debug(f'"{scenario.name} - {solver.StatusName()}')
 
     yield True
 
