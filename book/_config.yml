@@ -3,6 +3,7 @@
 
 title: Unconstrained
 author: Justin Rawlings
+copyright: 2022
 logo: logo.png
 
 # Force re-execution of notebooks on each build.

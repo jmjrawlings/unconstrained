@@ -1,6 +1,11 @@
-.temp
+# Jupyer book output
+book/_build
+
+# Test output
 unconstrained/examples/*/output/*.*
 !unconstrained/examples/*/output/.gitignore
+
+.docker/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

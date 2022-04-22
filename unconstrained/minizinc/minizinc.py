@@ -1,5 +1,5 @@
-from typing import AsyncIterator
 from ..prelude import *
+from typing import AsyncIterator
 from datetime import timedelta
 from minizinc import Method
 from minizinc import Model as MzModel
@@ -8,18 +8,84 @@ from minizinc import Solver as Solver
 from minizinc import Status as MzStatus
 from minizinc.CLI.instance import CLIInstance as MzInstance
 from minizinc.result import StdStatisticTypes
+from typing import TypedDict
 
-Statistic = Union[float, int, str, timedelta]
-Statistics = Dict[str, Statistic]
+class Statistics(TypedDict, total=False):
+    # Number of search nodes
+    nodes: int
+    # Number of leaf nodes that were failed
+    failures: int
+    # Number of times the solver restarted the search
+    restarts: int
+    # Number of variables
+    variables: int
+    # Number of integer variables created by the solver
+    intVariables: int
+    # Number of Boolean variables created by the solver
+    boolVariables: int
+    # Number of floating point variables created by the solver
+    floatVariables: int
+    # Number of set variables created by the solver
+    setVariables: int
+    # Number of propagators created by the solver
+    propagators: int
+    # Number of propagator invocations
+    propagations: int
+    # Peak depth of search tree
+    peakDepth: int
+    # Number of nogoods created
+    nogoods: int
+    # Number of backjumps
+    backjumps: int
+    # Peak memory (in Mbytes)
+    peakMem: float
+    # Initialisation time
+    initTime: timedelta
+    # Solving time
+    solveTime: timedelta
+    # Flattening time
+    flatTime: timedelta
+    # Number of paths generated
+    paths: int
+    # Number of Boolean variables in the flat model
+    flatBoolVars: int
+    # Number of floating point variables in the flat model
+    flatFloatVars: int
+    # Number of integer variables in the flat model
+    flatIntVars: int
+    # Number of set variables in the flat model
+    flatSetVars: int
+    # Number of Boolean constraints in the flat model
+    flatBoolConstraints: int
+    # Number of floating point constraints in the flat model
+    flatFloatConstraints: int
+    # Number of integer constraints in the flat model
+    flatIntConstraints: int
+    # Number of set constraints in the flat model
+    flatSetConstraints: int
+    # Optimisation method in the Flat Model
+    method: str
+    # Number of reified constraints evaluated during flattening
+    evaluatedReifiedConstraints: int
+    # Number of half-reified constraints evaluated during flattening
+    evaluatedHalfReifiedConstraints: int
+    # Number of implications removed through chain compression
+    eliminatedImplications: int
+    # Number of linear constraints removed through chain compression
+    eliminatedLinearConstraints: int
 
+
+# Expose methods at top levl
 MAXIMIZE = Method.MAXIMIZE
 MINIMIZE = Method.MINIMIZE
-SATISFY = Method.SATISFY
+SATISFY  = Method.SATISFY
 
+
+# Expose supported solvers at top level
 CHUFFED = 'chuffed'
 ORTOOLS = 'or-tools'
-GECODE = 'gecode'
-COINBC = 'coin-bc'
+GECODE  = 'gecode'
+COINBC  = 'coin-bc'
 
 
 def get_solver(x) -> Solver:
@@ -56,7 +122,6 @@ class SolveStatus(Enum):
     @property
     def is_error(self):        
         return self in [SolveStatus.ERROR, SolveStatus.UNKNOWN, SolveStatus.UNBOUNDED]
-
     
 
 @attr.s
@@ -73,11 +138,7 @@ class MiniZincResult:
     compile_time     : Duration        = duration_field()
     start_time       : DateTime        = datetime_field()
     end_time         : DateTime        = datetime_field()
-    int_vars         : int             = int_field()
-    bool_vars        : int             = int_field()
-    int_constraints  : int             = int_field()
-    bool_constraints : int             = int_field()
-    statistics       : Dict[str, Any]  = dict_field()
+    statistics       : Statistics      = dict_field()
     iteration        : int             = int_field()
     objective        : Optional[int]   = int_field(optional=True)
     objective_bound  : Optional[int]   = int_field(optional=True)
@@ -87,6 +148,7 @@ class MiniZincResult:
     relative_delta   : Optional[float] = int_field(optional=True)
     
     solution : Dict[str, Any] = {}
+    
     
     @property
     def solve_time(self):
@@ -181,26 +243,24 @@ async def solve_minizinc_model(
         model_string : str,
         options : MiniZincOptions,
         name    : str = 'model',
+        debug_path : Union[Path, str] = '/tmp',
         **parameters
         ) -> AsyncIterator[MiniZincResult]:
 
     import math
     
     solver = get_solver(options.solver_id)
-                
-    # Create the MiniZinc Model with our string and params                                
-    model = MzModel()
-    model.add_string(model_string)
-    for param, value in parameters.items():
-        model[param] = value
 
     # Initial solution
     result = MiniZincResult(name=name)
     
     # Create the MiniZinc Instance
     try:
-        instance = MzInstance(solver, model)
-                                        
+        instance = MzInstance(solver)
+        instance.add_string(model_string)
+        for param, value in parameters.items():
+            instance[param] = value
+                                            
         with instance.files() as files:
             for file in files:
                 result.model_string += '\n'
@@ -209,7 +269,9 @@ async def solve_minizinc_model(
         result.method = instance.method
         result.status = SolveStatus.FEASIBLE
         variables = set((instance.output or {}).keys())
-        variables.remove('_checker')        
+
+        if '_checker' in variables:
+            variables.remove('_checker')
         
     # Most likely syntax error
     except Exception as e:
@@ -220,15 +282,14 @@ async def solve_minizinc_model(
         variables = set()
         log.error(result.error)
 
-    # Write generate model out for debugging  
+    # Write generate model out for debugging
     model_filename = to_filename(name)
-    model_file = Path(f'.temp/{model_filename}.mzn')
-    # debug_file = Path(f'.temp/{model_filename}.txt')
-        
+    model_folder = to_directory(debug_path, create=True)
+    model_file = model_folder / f'{model_filename}.mzn'
     model_file.write_text(result.model_string)
     result.model_file = str(model_file)
     log.debug(f'"{result.name}" written to {result.model_file}')
-    
+        
     if instance is None:
         yield result
         return
@@ -244,12 +305,10 @@ async def solve_minizinc_model(
             free_search = '-f' in solver.stdFlags and options.free_search,
             processes = '-p' in solver.stdFlags and options.threads
         ):
-            statistics : Statistics = mz_result.statistics
-            mz_status = mz_result.status
-                                    
-            if flat_time := statistics.get('flatTime'):
-                result.compile_time = to_duration(flat_time)
 
+            statistics = previous.statistics.copy()
+            statistics.update(mz_result.statistics)
+                    
             result = MiniZincResult(
                 name            = name,
                 iteration       = previous.iteration + 1,
@@ -268,6 +327,12 @@ async def solve_minizinc_model(
                 absolute_delta  = previous.absolute_delta,
                 absolute_gap    = previous.absolute_gap,
             )
+
+            if 'flatTime' in statistics:
+                flat_time = statistics['flatTime']
+                result.compile_time = to_duration(flat_time)
+
+            mz_status = mz_result.status
             result.solution = previous.solution
                                                                         
             # No solution - MiniZinc has terminated
@@ -297,7 +362,7 @@ async def solve_minizinc_model(
                 result.status = status
 
                 for key,value in statistics.items():
-                    log.debug(f'"{name}" exited with {key} = {value}')
+                    log.debug(f'"{name}" {key} = {value}')
 
                 log.log(
                     logging.INFO if status.has_solution else logging.ERROR,
@@ -352,7 +417,7 @@ async def solve_minizinc_model(
             for var in variables:
                 value = mz_result[var]
                 result.solution[var] = value
-                # log.debug(f'{var} = {value}')
+                
 
             if rel_gap is not None:
                 log.debug(f'"{name}" solution {result.iteration} has objective {result.objective} and gap {rel_gap:.2%} after {result.elapsed}')
@@ -378,9 +443,9 @@ async def solve_minizinc_model(
 
 
 async def best_minizinc_solution(
-        model   : str,
-        options : MiniZincOptions,
-        name    : str = 'model',
+        model_string : str,
+        options      : MiniZincOptions,
+        name         : str = 'model',
         **parameters
         ) -> MiniZincResult:
     """
@@ -389,10 +454,10 @@ async def best_minizinc_solution(
     Equivalent to running `solve_model` and ignoring
     intermediate solutions
     """
-    
+        
     result = MiniZincResult()
             
-    async for result in solve_minizinc_model(model, name=name, options=options, **parameters):
+    async for result in solve_minizinc_model(model_string, name=name, options=options, **parameters):
         pass
     
     return result

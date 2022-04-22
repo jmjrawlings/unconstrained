@@ -1,9 +1,31 @@
 # Unconstrained
 
-Constraint programming using MiniZinc and Python for Fun and Profit.
+Constraint Programming for Fun and Profit.
 
-This is a personal workspace to test out ideas, packages and tools in the pursuit of a productive, fun, and somehwat simple way of solving challenging constraint programming problems.
+Unconstrained seeks to be a comprehensive and productive environment for modelling and solving Constraint Programming problems using 
+MiniZinc and Python.
 
+## Goals
+- model problems
+- compile models
+- solve models
+- evaluate solver performance
+- compare models/solvers
+- visualise solutions
+- interactive frontend
+- model persistence
+- development environment
+- python package management
+- local and remote CI/CD
+- open source libraries only
+
+## Non-Goals
+- a production ready minizinc model builder
+- a production ready anything
+- a reusable python package
+- a 'framework'
+- comprehensive documentation
+- backwards compatibility
 
 ## Quickstart
 - Install VSCode
@@ -11,33 +33,11 @@ This is a personal workspace to test out ideas, packages and tools in the pursui
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
-
-## Goals
-Discover a repeatable and productive approaches to:
-- modelling problems
-- compiling models
-- solving models
-- comparing models
-- visualising solutions
-- evaluating solver performance
-- serialize/deserialize
-- development environment
-- python packages
-
-
-## Non-Goals
-- a production ready minizinc model builder
-- a production ready anything
-- comprehensive documentation
-- backwards compatibility
-
-
-## Examples
-- [Google Hash Code 2022 - Mentorship](./unconstrained/examples/google_hashcode_2022_mentorship/README.md)
-
+## [Examples](./examples)
+- [Google Hash Code 2022 - Mentorship](./examples/google_hashcode_2022_mentorship/README.md)
+- [Nurse Rostering](./examples/nurse_rostering/README.md)
 
 ## Helpful Links
-
 
 ### Constraint Programming
 - [MiniZinc](https://www.minizinc.org/)
@@ -48,6 +48,7 @@ Discover a repeatable and productive approaches to:
 - [Discrete Algorithms Course](https://www.coursera.org/learn/solving-algorithms-discrete-optimization)
 - [Google OR-Tools](https://developers.google.com/optimization)
 - [Google OR-Tools GitHub](https://github.com/google/or-tools)
+- [Google OR-Tools Manual](https://acrogenesis.com/or-tools/documentation/user_manual/)
 
 
 ### Python
@@ -55,8 +56,13 @@ Discover a repeatable and productive approaches to:
 - [Pytest](https://docs.pytest.org/en/latest/)
 - [Attrs](https://www.attrs.org/en/stable/)
 - [Cattrs](https://cattrs.readthedocs.io/en/latest/)
+- [SqlModel](https://github.com/tiangolo/sqlmodel)
+- [Minizinc Python](https://github.com/MiniZinc/minizinc-python)
 
 
 ### Development
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [VSCode Devcontainer](https://code.visualstudio.com/docs/remote/containers)
+- [Dagger](https://dagger.io/)
+- [Dagger Docs](https://docs.dagger.io/)
+- [CUE Lang](https://cuelang.org/)

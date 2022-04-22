@@ -2,11 +2,12 @@ minizinc
 iminizinc
 altair
 attrs
+cattrs
 pendulum
 palettable
-cattrs
 rich
 jupyter-book
+jupyterlab
 vega
 vega-datasets
 ipywidgets
@@ -16,3 +17,4 @@ pytest-watch
 h2o-wave
 faker
 ortools
+sqlmodel

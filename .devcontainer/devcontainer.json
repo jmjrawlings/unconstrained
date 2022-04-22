@@ -1,7 +1,7 @@
 {
     "name": "unconstrained",
     "context": "..",
-    "dockerFile": "Dockerfile",
+    "dockerFile": "../Dockerfile",
     "settings": {
         
         // Python location
@@ -25,7 +25,7 @@
 
         // Browser hot-reload of book
         "liveServer.settings.root": "/book/_build/html",
-        
+                
         // Zsh Shell
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
@@ -47,11 +47,21 @@
 		"ms-python.python",
 		"ms-toolsai.jupyter",
 		"dekkerone.minizinc",
-        "ritwickdey.liveserver"
+        "ritwickdey.liveserver",
+        "nickgo.cuelang"
 	],
     
     "runArgs": [ 
+        "--init",
         "--hostname", "host"
-    ]
+    ],
 
+    "mounts":[
+         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" 
+    ],
+
+    "containerEnv": {
+        "DO_NOT_TRACK" : "1"
+    }
+    
 }
