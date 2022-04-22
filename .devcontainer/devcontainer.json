@@ -48,7 +48,8 @@
 		"ms-toolsai.jupyter",
 		"dekkerone.minizinc",
         "ritwickdey.liveserver",
-        "nickgo.cuelang"
+        "nickgo.cuelang",
+        "bierner.markdown-emoji"
 	],
     
     "runArgs": [ 

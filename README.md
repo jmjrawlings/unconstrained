@@ -34,8 +34,9 @@ MiniZinc and Python.
 - Ctrl+Shift+P `Reopen Folder in Container`
 
 ## [Examples](./examples)
-- [Google Hash Code 2022 - Mentorship](./examples/google_hashcode_2022_mentorship/README.md)
+- [Google Hash Code 2022 - Mentorship](./examples/project_planning/README.md)
 - [Nurse Rostering](./examples/nurse_rostering/README.md)
+
 
 ## Helpful Links
 
