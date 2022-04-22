@@ -9,8 +9,8 @@ https://codingcompetitions.withgoogle.com/hashcode/round/00000000008caae7)
 | Model   | :heavy_check_mark: |
 | Solve   | :heavy_check_mark: |
 | Visualise | :heavy_check_mark: |
-| App | :cross_mark: |
-| Notebook | :cross_mark: |
+| App | :x: |
+| Notebook | :x: |
 
 
 ## Run Tests

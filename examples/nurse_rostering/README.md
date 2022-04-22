@@ -5,8 +5,8 @@ Taken from https://developers.google.com/optimization/scheduling/employee_schedu
 
 | Feature | Status |
 | ------- | ------ |
-| Model   | :heavy_check_mark: |
-| Solve   | :cross_mark: |
-| Visualise | :cross_mark: |
-| App | :cross_mark: |
-| Notebook | :cross_mark: |
+| Model   | :x: |
+| Solve   | :x: |
+| Visualise | :x: |
+| App | :x: |
+| Notebook | :x: |
