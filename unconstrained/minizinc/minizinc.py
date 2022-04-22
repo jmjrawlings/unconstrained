@@ -330,7 +330,7 @@ async def solve_minizinc_model(
 
             if 'flatTime' in statistics:
                 flat_time = statistics['flatTime']
-                result.compile_time = to_duration(flat_time)
+                result.compile_time = to_duration(seconds=flat_time)
 
             mz_status = mz_result.status
             result.solution = previous.solution

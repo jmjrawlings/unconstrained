@@ -88,7 +88,7 @@ class HasId:
         return hash(self.get_id())
 
     def __str__(self):
-        return self.get_id()
+        return str(self.get_id())
 
     def __repr__(self):
         return f"<{self!s}>"
