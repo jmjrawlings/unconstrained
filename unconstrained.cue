@@ -23,7 +23,7 @@ dagger.#Plan & {
             args: ["pytest"]
             }
         
-        test_minizinc:
+        test_minizinc: 
             core.#Exec & 
             {
             input : docker_build.output

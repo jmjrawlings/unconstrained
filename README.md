@@ -2,15 +2,16 @@
 
 Constraint Programming for Fun and Profit.
 
-Unconstrained seeks to be a comprehensive and productive environment for modelling and solving Constraint Programming problems using MiniZinc and Python.
+Unconstrained seeks to be a comprehensive and productive environment for modelling and solving Constraint Programming problems using 
+MiniZinc and Python.
 
 ## Goals
 - model problems
 - compile models
 - solve models
-- compare solutions/solvers/techniques
-- evaluating solver performance
-- visualisation
+- evaluate solver performance
+- compare models/solvers
+- visualise solutions
 - interactive frontend
 - model persistence
 - development environment
@@ -32,9 +33,9 @@ Unconstrained seeks to be a comprehensive and productive environment for modelli
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
-## Examples
-- [Google Hash Code 2022 - Mentorship](./unconstrained/examples/google_hashcode_2022_mentorship/README.md)
-
+## [Examples](./examples)
+- [Google Hash Code 2022 - Mentorship](./examples/google_hashcode_2022_mentorship/README.md)
+- [Nurse Rostering](./examples/nurse_rostering/README.md)
 
 ## Helpful Links
 
