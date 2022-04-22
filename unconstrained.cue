@@ -28,13 +28,23 @@ dagger.#Plan & {
             {
             input : docker_build.output
             args: ["minizinc", "--version"]
+            always: true
             }
 
         test_python:
             core.#Exec & 
             {
             input : docker_build.output
-            args: ["which", "python"]
+            args: ["which", "python3"]
+            always: true
+            }
+
+        debug:
+        core.#Exec & 
+            {
+            input : docker_build.output
+            args: ["ls", "-a"]
+            always: true
             }
 
     }
