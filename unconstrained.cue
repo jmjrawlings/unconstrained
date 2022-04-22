@@ -2,22 +2,50 @@ package main
 
 import (
   "dagger.io/dagger"
-//   "dagger.io/dagger/core"
-//   "universe.dagger.io/bash"
+  "dagger.io/dagger/core"
 )
 
 dagger.#Plan & {
 
-    client: {
-        filesystem:
-            ".": read: contents: dagger.#FS
-        commands:
-            pytest: name: "pytest"
+    actions: {
+
+        docker_build: 
+            core.#Dockerfile & 
+            {
+            dockerfile: path: "Dockerfile"
+            source: client.filesystem.".".read.contents
+            }
+        
+        pytest: 
+            core.#Exec & 
+            {
+            input: docker_build.output
+            args: ["pytest"]
+            }
+        
+        test_minizinc:
+            core.#Exec & 
+            {
+            input : docker_build.output
+            args: ["minizinc", "--version"]
+            }
+
+        test_python:
+            core.#Exec & 
+            {
+            input : docker_build.output
+            args: ["which", "python"]
+            }
+
     }
     
-    actions: {
-        test: {
-            result: client.commands.pytest.stdout            
-        }
+    client: {
+
+        filesystem: 
+            ".": read: {
+                contents: dagger.#FS
+            }
+                
+
     }
 }

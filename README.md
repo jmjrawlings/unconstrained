@@ -1,32 +1,22 @@
 # Unconstrained
 
-Constraint programming using MiniZinc and Python for Fun and Profit.
+Constraint Programming for Fun and Profit.
 
-This is a personal workspace to test out ideas, packages and tools in the pursuit of a productive, fun, and somehwat simple way of solving challenging constraint programming problems.
-
-
-## Quickstart
-- Install VSCode
-- Install VSCode Remote Development Pack
-- Open repo in VSCode
-- Ctrl+Shift+P `Reopen Folder in Container`
-
+Unconstrained seeks to be a comprehensive and productive environment for modelling and solving Constraint Programming problems using MiniZinc and Python.
 
 ## Goals
-Arrive on a repeatable and productive approach to:
-- modelling problems
-- compiling models
-- solving models
-- comparing models
-- visualising solutions
-- interactive frontned
+- model problems
+- compile models
+- solve models
+- compare solutions/solvers/techniques
 - evaluating solver performance
-- serialize/deserialize
+- visualisation
+- interactive frontend
+- model persistence
 - development environment
 - python package management
 - local and remote CI/CD
-- database integration
-
+- open source libraries only
 
 ## Non-Goals
 - a production ready minizinc model builder
@@ -36,13 +26,17 @@ Arrive on a repeatable and productive approach to:
 - comprehensive documentation
 - backwards compatibility
 
+## Quickstart
+- Install VSCode
+- Install VSCode Remote Development Pack
+- Open repo in VSCode
+- Ctrl+Shift+P `Reopen Folder in Container`
 
 ## Examples
 - [Google Hash Code 2022 - Mentorship](./unconstrained/examples/google_hashcode_2022_mentorship/README.md)
 
 
 ## Helpful Links
-
 
 ### Constraint Programming
 - [MiniZinc](https://www.minizinc.org/)
@@ -62,6 +56,7 @@ Arrive on a repeatable and productive approach to:
 - [Attrs](https://www.attrs.org/en/stable/)
 - [Cattrs](https://cattrs.readthedocs.io/en/latest/)
 - [SqlModel](https://github.com/tiangolo/sqlmodel)
+- [Minizinc Python](https://github.com/MiniZinc/minizinc-python)
 
 
 ### Development
