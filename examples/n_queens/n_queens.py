@@ -1,16 +1,15 @@
 from unconstrained import *
+import altair as alt
 from altair import Chart
+import pandas as pd
+
 
 @attr.s(**ATTRS)
 class Queen(HasId):
-
-    # Fields
-    id : int = int_field()
-    # Solution
-
-    row : int = int_field()
-    col : int = int_field()
-
+    id  : int = int_field()
+    row : int = int_field(comment='Row (filled by solver)')
+    col : int = int_field(comment='Column (filled by solver)')
+    
 
 class Queens(Map[int, Queen]):
     key_type = int
@@ -19,11 +18,16 @@ class Queens(Map[int, Queen]):
 
 @attr.s(**ATTRS)
 class Scenario(HasId):
-        
-    # Fields
-    id : str = uuid_field()
-    n : int = int_field()
+    id  : str = uuid_field()
+    n   : int = int_field(comment='Size of the Scenario')
     queens : Queens = map_field(Queens)
+
+    @property
+    def name(self):
+        return f'{self.n} Queens'
+
+    def __str__(self):
+        return self.name
     
 
 
@@ -60,9 +64,35 @@ async def solve(scenario : Scenario, options : MiniZincOptions, **kwargs):
             q += 1
             queen = scenario.queens[q]
             queen.col = col + 1
-            queen.row = row + 1
-            print(f'{queen} {col} {row}')
+            queen.row = row
 
-        print(result)
+        yield result
+
+
+def dataset(scenario : Scenario):
+    records = []
+    for queen in scenario.queens:
+        records.append(dict(
+            n = scenario.n,
+            queen = queen.id,
+            row = queen.row,
+            col = queen.col
+        ))
+    df = pd.DataFrame.from_records(records)
+    return df
+
+
+def plot(scenario : Scenario) -> Chart:
+    data = dataset(scenario)
+    base = (alt
+        .Chart(data)
+        .encode(x=alt.X('col:O'))
+        .encode(y=alt.Y('row:O'))
+    )
+
+    rects = base.mark_rect(color='black').encode()
+    texts = base.mark_text(color='white', size=14).encode(text='queen:N')
+    chart = rects + texts
+    return chart
+
     
-    yield True

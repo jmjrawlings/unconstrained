@@ -27,6 +27,7 @@ def filepath(filename):
 @fixture
 def scenario(filepath) -> Scenario:
     return load_scenario(filepath)
+    
         
 @fixture
 def minizinc_options():

@@ -2,12 +2,10 @@ from ..prelude import *
 from typing import AsyncIterator
 from datetime import timedelta
 from minizinc import Method
-from minizinc import Model as MzModel
 from minizinc import Result as MzResult
 from minizinc import Solver as Solver
 from minizinc import Status as MzStatus
 from minizinc.CLI.instance import CLIInstance as MzInstance
-from minizinc.result import StdStatisticTypes
 from typing import TypedDict
 
 class Statistics(TypedDict, total=False):
@@ -122,7 +120,18 @@ class SolveStatus(Enum):
     @property
     def is_error(self):        
         return self in [SolveStatus.ERROR, SolveStatus.UNKNOWN, SolveStatus.UNBOUNDED]
-    
+
+
+# Expose solve status at top level
+FEASIBLE      = SolveStatus.FEASIBLE
+OPTIMAL       = SolveStatus.OPTIMAL
+THRESHOLD     = SolveStatus.THRESHOLD
+UNSATISFIABLE = SolveStatus.UNSATISFIABLE
+TIMEOUT       = SolveStatus.TIMEOUT
+ERROR         = SolveStatus.ERROR
+UNKNOWN       = SolveStatus.UNKNOWN
+UNBOUNDED     = SolveStatus.UNBOUNDED
+
 
 @attr.s
 class MiniZincResult:

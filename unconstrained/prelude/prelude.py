@@ -401,7 +401,7 @@ def round_minutes(dt: DateTime, precision: int = 1, up=False) -> DateTime:
     return dt.add(minutes=new_minute - dt.minute).replace(second=0)
 
 
-def make_field(cls : Type[T], null: T, converter : Callable[[Any], T] = None, **kwargs):
+def make_field(cls : Type[T], null: T, converter : Callable[[Any], T] = None, comment="", **kwargs):
     optional = kwargs.pop('optional', False)
     if 'default' not in kwargs:
         if 'factory' in kwargs:
@@ -414,7 +414,7 @@ def make_field(cls : Type[T], null: T, converter : Callable[[Any], T] = None, **
     kwargs['converter'] = attr.converters.optional(converter) if optional else converter
     kwargs['validator'] = attr.validators.optional(attr.validators.instance_of(cls)) if optional else attr.validators.instance_of(cls)
     kwargs['on_setattr'] = attr.setters.convert
-    return attr.field(**kwargs)
+    return attr.attrib(metadata=dict(comment=comment), **kwargs)
 
 
 def string_field(**kwargs):

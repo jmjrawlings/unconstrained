@@ -2,8 +2,8 @@
 book/_build
 
 # Test output
-unconstrained/examples/*/output/*.*
-!unconstrained/examples/*/output/.gitignore
+tests/output/*.*
+!tests/output/.gitkeep
 
 .docker/
 
