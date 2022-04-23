@@ -22,9 +22,6 @@
         "python.testing.pytestArgs": ["tests"],
         "python.testing.unittestEnabled": false,
         "python.testing.nosetestsEnabled": false,
-
-        // Browser hot-reload of book
-        "liveServer.settings.root": "/book/_build/html",
                 
         // Zsh Shell
         "terminal.integrated.defaultProfile.linux": "zsh",
