@@ -280,3 +280,9 @@ def list_field(cls : Type[T], **kwargs) -> TList[T]:
     list_class = make_list_class(cls)
     return make_field(list_class, list_class(), list_class, **kwargs)
     
+
+def list_type(type: Type[T]) -> Type[TList[T]]:
+    class List_(TList):
+        val_type = type
+
+    return List_

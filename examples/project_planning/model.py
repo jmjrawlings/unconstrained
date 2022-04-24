@@ -13,10 +13,7 @@ class Skill(HasId):
     def get_id(self):
         return self.skill_id
 
-
-class Skills(Map[int, Skill]):
-    key_type = int
-    val_type = Skill
+Skills = map_type(int, Skill)
 
 
 @attr.s(**ATTRS)
@@ -36,9 +33,7 @@ class Contributor(HasId):
         return self.cont_id
 
 
-class Contributors(Map[int, Contributor]):
-    key_type = int
-    val_type = Contributor
+Contributors = map_type(int, Contributor)
 
 
 @attr.s(**ATTRS)
@@ -72,9 +67,7 @@ class Role(HasId):
         return self.role_id
 
 
-class Roles(Map[int, Role]):
-    key_type = int
-    val_type = Role
+Roles = map_type(int, Role)
     
 
 @attr.s
@@ -108,9 +101,7 @@ class Project(HasId):
         return self.proj_id
 
 
-class Projects(Map[int, Project]):
-    key_type = int
-    val_type = Project
+Projects = map_type(int, Project)
 
 
 @attr.s(**ATTRS)

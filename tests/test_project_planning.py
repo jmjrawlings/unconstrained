@@ -27,10 +27,11 @@ def filepath(filename):
 @fixture
 def scenario(filepath) -> Scenario:
     return load_scenario(filepath)
+    
         
 @fixture
 def minizinc_options():
-    return MiniZincOptions()
+    return SolveOptions()
 
 
 async def test_solve_with_static_minizinc(scenario, minizinc_options):

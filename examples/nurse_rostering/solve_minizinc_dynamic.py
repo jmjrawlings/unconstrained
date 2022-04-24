@@ -5,6 +5,6 @@ from unconstrained import *
 from .model import *
 
 
-async def solve_with_dynamic_minizinc(scenario : Scenario, options : MiniZincOptions):
+async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
     return
     yield

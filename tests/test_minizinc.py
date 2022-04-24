@@ -1,3 +1,4 @@
+from curses import ERR
 from unconstrained import *
 from pytest import mark, fixture
 
@@ -29,25 +30,25 @@ def minizinc_threads(request) -> int:
 
 @fixture
 def minizinc_options(minizinc_solver, minizinc_threads):
-    return MiniZincOptions(
+    return SolveOptions(
         solver_id = minizinc_solver.id,
         threads = minizinc_threads
     )
 
 
-async def test_solve_simple_satisfy_model(minizinc_options):
-    result = await best_minizinc_solution(
+async def test_solve_satisfy(minizinc_options):
+    result = await best_solution(
         """
         var 1..10: a;
         var bool: b;
         """,
         minizinc_options
         )
-    assert result.status == SolveStatus.FEASIBLE
+    assert result.status == FEASIBLE
 
 
-async def test_solve_simple_optimise_model(minizinc_options):
-    result = await best_minizinc_solution(
+async def test_solve_optimise(minizinc_options):
+    result = await best_solution(
         """
         var 1..10: a;
         var 1..10: b;
@@ -57,6 +58,18 @@ async def test_solve_simple_optimise_model(minizinc_options):
         minizinc_options
         )
     assert result.objective == 9
-    assert result.status == SolveStatus.OPTIMAL
+    assert result.status == OPTIMAL
     assert result['b'] == 10
     assert result['a'] == 1
+
+
+async def test_syntax_error(minizinc_options):
+    result = await best_solution(
+        """
+        var 1 @#$  %$$%@@@323.10: a;
+        var bool: b;
+        """,
+        minizinc_options
+        )
+    assert result.error
+    assert result.status == ERROR

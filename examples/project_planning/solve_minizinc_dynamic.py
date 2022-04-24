@@ -5,7 +5,7 @@ Solve the scenario using a dynamically generated minizinc model
 from unconstrained import *
 from .model import *
 
-async def solve_with_dynamic_minizinc(scenario : Scenario, options : MiniZincOptions):
+async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
                                         
     max_score = scenario.projects.max('best_score')
     max_day = scenario.projects.sum('days') + 1
@@ -297,7 +297,7 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : MiniZincOpt
     )
         
 
-    async for result in solve_minizinc_model(model.string, options, name = scenario.name):
+    async for result in solve(model.string, options, name = scenario.name):
                 
         if not result.status.has_solution:
             log.error(f'"{result.name}" failed with status "{result.status}"')
