@@ -374,12 +374,12 @@ async def solve(
 
                 result.status = status
 
-                # for key,value in statistics.items():
-                #     log.debug(f'"{name}" {key} = {value}')
+                for key,value in statistics.items():
+                    log.trace(f'"{name}" {key} = {value}')
 
                 log.log(
                     logging.INFO if status.has_solution else logging.ERROR,
-                    f'"{name}" exited with status "{status.name}" after {result.elapsed}'
+                    f'"{name}" returned "{status.name}" after {result.elapsed}'
                 )
                 break
 

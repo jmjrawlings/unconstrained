@@ -62,3 +62,21 @@ class Scenario:
 
 def load_scenario() -> Scenario:
     pass
+
+
+
+
+async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
+    return
+    yield
+
+
+import altair as alt
+from altair import datum, Chart
+
+def plot_scenario(
+        scenario : Scenario,
+        solutions=[], 
+        width = 600, 
+        path : Optional[Path] = None) -> Chart:
+    return Chart()
