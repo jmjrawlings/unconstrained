@@ -11,9 +11,7 @@ class Queen(HasId):
     col : int = int_field(comment='Column (filled by solver)')
     
 
-class Queens(Map[int, Queen]):
-    key_type = int
-    val_type = Queen
+Queens = map_type(int, Queen)
 
 
 @attr.s(**ATTRS)

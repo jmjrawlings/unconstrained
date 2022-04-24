@@ -15,12 +15,12 @@ class Nurse(HasId):
         return self.nurse_id
 
 
-class Nurses(Map[int, Nurse]):
-    val_type = Nurse
+Nurses = map_type(int, Nurse)
 
 
 @attr.s(**ATTRS)
 class Shift(HasId):
+    
     # Fields
     shift_id : int = int_field()
     shift_no : int = int_field()
@@ -50,8 +50,8 @@ class Day(HasId):
     shifts : Shifts
     
 
-class Days(Map[int,Day]):
-    val_type = Day
+Days = map_type(int, Day)
+
 
 @attr.s(**ATTRS)
 class Scenario:

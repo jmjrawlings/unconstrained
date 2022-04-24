@@ -571,6 +571,17 @@ def map_field(cls: Type[T], **kwargs) -> T:
         **kwargs
     )
 
+def map_type(key: Type[K], val: Type[V], get_key = None) -> Type[Map[K,V]]:
+    
+    class Map_(Map):
+        key_type = key
+        val_type = val
+
+    if get_key:
+        Map_.get_key = get_key
+
+    return Map_
+
 
 # def deserialize_map(obj: Map):
 #     vals = obj.list
