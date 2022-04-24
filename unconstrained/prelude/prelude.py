@@ -29,20 +29,20 @@ def uuid():
 converter = cattr.GenConverter() 
 unstructure = converter.unstructure
 
-log = logging.getLogger('unconstrained')
-# log = logging.getLogger('root')
+from loguru import logger as log
+log.remove()
 
-log.setLevel(logging.DEBUG)
-log.addHandler(
+log.add(
     RichHandler(
-        level=logging.DEBUG,
-        show_level=True,
         markup=True,
         rich_tracebacks=True,
         show_path=True,
         log_time_format='[%X]',
+        enable_link_path=True,
         omit_repeated_times=False
-    ))
+    ),
+    format='{message}'
+    )
 
 
 # Keyword arguments to ATTRS classes we will use throughout

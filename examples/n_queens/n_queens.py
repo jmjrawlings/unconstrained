@@ -92,5 +92,3 @@ def plot(scenario : Scenario) -> Chart:
     texts = base.mark_text(color='white', size=14).encode(text='queen:N')
     chart = rects + texts
     return chart
-
-    

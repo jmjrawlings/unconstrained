@@ -33,9 +33,14 @@ MiniZinc and Python.
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
-## [Examples](./examples)
-- [Google Hash Code 2022 - Mentorship](./examples/project_planning/README.md)
-- [Nurse Rostering](./examples/nurse_rostering/README.md)
+## Examples
+
+| Name | Type | Model | Solve | Plot | .ipynb | App | Link |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| N-Queens | SAT | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | [link](./examples/n_queens/README.md) |
+| Nurse Rostering | OPT | :x: | :x: | :x: | :x: | :x: | [link](./examples/nurse_rostering/README.md) |
+| Project Planning | OPT | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | [link](./examples/project_planning/README.md) |
+
 
 
 ## Helpful Links
