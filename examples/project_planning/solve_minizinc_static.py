@@ -144,7 +144,7 @@ constraint diffn(
 solve maximize sum(project_score);
 """
 
-async def solve_with_static_minizinc(scenario : Scenario, options : MiniZincOptions):
+async def solve_with_static_minizinc(scenario : Scenario, options : SolveOptions):
 
     max_skill = scenario.skills.count
     max_proj  = scenario.projects.count
@@ -163,7 +163,7 @@ async def solve_with_static_minizinc(scenario : Scenario, options : MiniZincOpti
     
     contributor_skill = [c.competencies.get(s, 0) for c in scenario.contributors for s in scenario.skills.keys]
     
-    async for result in solve_minizinc_model(
+    async for result in solve(
         model_string,
         options,
         name = scenario.name,

@@ -38,7 +38,7 @@ def create_scenario(n=3) -> Scenario:
 
 
 
-async def solve(scenario : Scenario, options : MiniZincOptions, **kwargs):
+async def solve_scenario(scenario : Scenario, options : SolveOptions, **kwargs):
 
     model = """
     int: n;
@@ -55,7 +55,7 @@ async def solve(scenario : Scenario, options : MiniZincOptions, **kwargs):
         satisfy;
     """
 
-    async for result in solve_minizinc_model(model, options, n=scenario.n, **kwargs):
+    async for result in solve(model, options, n=scenario.n, **kwargs):
         array = result['q']
         q = 0
         for col, row in enumerate(array):

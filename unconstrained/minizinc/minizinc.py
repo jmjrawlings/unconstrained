@@ -1,5 +1,5 @@
 from ..prelude import *
-from typing import AsyncIterator
+from typing import AsyncIterable
 from datetime import timedelta
 from minizinc import Method
 from minizinc import Result as MzResult
@@ -103,7 +103,7 @@ def get_installed_solvers(x):
     return []
 
 
-class SolveStatus(Enum):
+class Status(Enum):
     FEASIBLE      = "feasible"
     OPTIMAL       = "optimal"
     THRESHOLD     = "threshold"
@@ -115,26 +115,26 @@ class SolveStatus(Enum):
     
     @property
     def has_solution(self):
-        return self in [SolveStatus.FEASIBLE, SolveStatus.OPTIMAL, SolveStatus.THRESHOLD]
+        return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD]
 
     @property
     def is_error(self):        
-        return self in [SolveStatus.ERROR, SolveStatus.UNKNOWN, SolveStatus.UNBOUNDED]
+        return self in [Status.ERROR, Status.UNKNOWN, Status.UNBOUNDED]
 
 
 # Expose solve status at top level
-FEASIBLE      = SolveStatus.FEASIBLE
-OPTIMAL       = SolveStatus.OPTIMAL
-THRESHOLD     = SolveStatus.THRESHOLD
-UNSATISFIABLE = SolveStatus.UNSATISFIABLE
-TIMEOUT       = SolveStatus.TIMEOUT
-ERROR         = SolveStatus.ERROR
-UNKNOWN       = SolveStatus.UNKNOWN
-UNBOUNDED     = SolveStatus.UNBOUNDED
+FEASIBLE      = Status.FEASIBLE
+OPTIMAL       = Status.OPTIMAL
+THRESHOLD     = Status.THRESHOLD
+UNSATISFIABLE = Status.UNSATISFIABLE
+TIMEOUT       = Status.TIMEOUT
+ERROR         = Status.ERROR
+UNKNOWN       = Status.UNKNOWN
+UNBOUNDED     = Status.UNBOUNDED
 
 
-@attr.s
-class MiniZincResult:
+@attr.s(**ATTRS)
+class Result:
     """
     A result provided by MiniZinc
     """
@@ -142,7 +142,7 @@ class MiniZincResult:
     model_string     : str             = string_field()
     model_file       : str             = string_field()
     method           : Method          = enum_field(Method, SATISFY)
-    status           : SolveStatus     = enum_field(SolveStatus, SolveStatus.FEASIBLE)
+    status           : Status     = enum_field(Status, Status.FEASIBLE)
     error            : str             = string_field()
     compile_time     : Duration        = duration_field()
     start_time       : DateTime        = datetime_field()
@@ -158,13 +158,12 @@ class MiniZincResult:
     
     solution : Dict[str, Any] = {}
     
-    
     @property
-    def solve_time(self):
-        return self.end_time - self.start_time
+    def solve_time(self) -> Period:
+        return to_period(self.start_time, self.end_time)
 
     @property
-    def solve_duration(self):
+    def solve_duration(self) -> Duration:
         return self.solve_time.as_interval()
 
     @property
@@ -178,6 +177,10 @@ class MiniZincResult:
     @property
     def has_bound(self):
         return self.objective_bound is not None
+
+    @property
+    def has_solution(self):
+        return self.status.has_solution
 
     def get_value(self, name, *indices) -> Any:
         """
@@ -210,7 +213,7 @@ class MiniZincResult:
         return self.get_value(name, *indices)
 
     def __str__(self):
-        return f'SolveResult "{self.name}" - {self.status.name}'
+        return f'{self.name} - {self.status.name}'
 
     def __repr__(self) -> str:
         return f'<{self!s}>'
@@ -239,8 +242,8 @@ class FlattenOptions(Enum):
 
 
 
-@attr.s
-class MiniZincOptions:
+@attr.s(**ATTRS)
+class SolveOptions:
     solver_id       : str           = string_field(default="or-tools")
     threads         : int           = int_field(default=4)
     time_limit      : Duration      = duration_field(default=dict(minutes=1))
@@ -248,20 +251,20 @@ class MiniZincOptions:
     free_search     : bool          = bool_field(default=True)
     
 
-async def solve_minizinc_model(
+async def solve(
         model_string : str,
-        options : MiniZincOptions,
+        options : SolveOptions,
         name    : str = 'model',
         debug_path : Union[Path, str] = '/tmp',
         **parameters
-        ) -> AsyncIterator[MiniZincResult]:
+        ) -> AsyncIterable[Result]:
 
     import math
     
     solver = get_solver(options.solver_id)
 
     # Initial solution
-    result = MiniZincResult(name=name)
+    result = Result(name=name)
     
     # Create the MiniZinc Instance
     try:
@@ -276,7 +279,7 @@ async def solve_minizinc_model(
                 result.model_string += file.read_text()
 
         result.method = instance.method
-        result.status = SolveStatus.FEASIBLE
+        result.status = Status.FEASIBLE
         variables = set((instance.output or {}).keys())
 
         if '_checker' in variables:
@@ -286,7 +289,7 @@ async def solve_minizinc_model(
     except Exception as e:
         result.error = e.args[0]
         result.model_string = model_string
-        result.status = SolveStatus.ERROR
+        result.status = Status.ERROR
         instance = None
         variables = set()
         log.error(result.error)
@@ -299,6 +302,7 @@ async def solve_minizinc_model(
     result.model_file = str(model_file)
     log.debug(f'"{result.name}" written to {result.model_file}')
         
+    # if instance is None:
     if instance is None:
         yield result
         return
@@ -318,7 +322,7 @@ async def solve_minizinc_model(
             statistics = previous.statistics.copy()
             statistics.update(mz_result.statistics)
                     
-            result = MiniZincResult(
+            result = Result(
                 name            = name,
                 iteration       = previous.iteration + 1,
                 start_time      = previous.start_time,
@@ -328,7 +332,7 @@ async def solve_minizinc_model(
                 method          = previous.method,
                 model_string    = previous.model_string,
                 model_file      = previous.model_file,
-                status          = SolveStatus.FEASIBLE,
+                status          = Status.FEASIBLE,
                 objective       = previous.objective,
                 objective_bound = previous.objective_bound,
                 relative_delta  = previous.relative_delta,
@@ -348,25 +352,25 @@ async def solve_minizinc_model(
             if mz_result.solution is None:
                 
                 if mz_status == MzStatus.OPTIMAL_SOLUTION:
-                    status = SolveStatus.OPTIMAL
+                    status = Status.OPTIMAL
 
                 elif mz_status == MzStatus.UNSATISFIABLE:
-                    status = SolveStatus.UNSATISFIABLE
+                    status = Status.UNSATISFIABLE
 
                 elif mz_status in [MzStatus.ALL_SOLUTIONS, MzStatus.SATISFIED]:
-                    status = SolveStatus.FEASIBLE
+                    status = Status.FEASIBLE
 
                 elif mz_status == MzStatus.UNBOUNDED:
-                    status = SolveStatus.UNBOUNDED
+                    status = Status.UNBOUNDED
 
                 elif mz_status == MzStatus.UNKNOWN:
                     if result.solve_duration > options.time_limit:
-                        status = SolveStatus.TIMEOUT
+                        status = Status.TIMEOUT
                     else:
-                        status = SolveStatus.UNKNOWN
+                        status = Status.UNKNOWN
 
                 else:
-                    status = SolveStatus.ERROR
+                    status = Status.ERROR
 
                 result.status = status
 
@@ -441,32 +445,28 @@ async def solve_minizinc_model(
 
     except Exception as e:
         result.error = e.args[0]
-        result.status = SolveStatus.ERROR
+        result.status = Status.ERROR
         log.error(result.error)
         
     yield result
-    # log.debug(f'"{name}" debug written to {debug_file}')
-
     return
     
 
 
-async def best_minizinc_solution(
+async def best_solution(
         model_string : str,
-        options      : MiniZincOptions,
+        options      : SolveOptions,
         name         : str = 'model',
         **parameters
-        ) -> MiniZincResult:
+        ) -> Result:
     """
     Solve the model and return the best solution
 
     Equivalent to running `solve_model` and ignoring
     intermediate solutions
     """
-        
-    result = MiniZincResult()
-            
-    async for result in solve_minizinc_model(model_string, name=name, options=options, **parameters):
+
+    async for result in solve(model_string, name=name, options=options, **parameters):
         pass
     
     return result

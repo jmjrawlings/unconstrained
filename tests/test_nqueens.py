@@ -10,13 +10,13 @@ def scenario():
 
 @fixture
 def options():
-    return MiniZincOptions()
+    return SolveOptions()
 
 
 
 async def test_solve(scenario : Scenario, options, output_dir):
                 
-    async for result in solve(scenario, options, name=scenario.name):
+    async for result in solve_scenario(scenario, options, name=scenario.name):
         pass
 
     chart = plot(scenario)

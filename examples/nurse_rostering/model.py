@@ -56,10 +56,9 @@ Days = map_type(int, Day)
 @attr.s(**ATTRS)
 class Scenario:
     nurses : Nurses = map_field(Nurses)
-    days : Days = map_field(Days)
+    days   : Days   = map_field(Days)
     shifts : Shifts = map_field(Shifts)
-
-
+    
 
 def load_scenario() -> Scenario:
     pass
