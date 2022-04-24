@@ -5,8 +5,9 @@ Taken from https://developers.google.com/optimization/scheduling/employee_schedu
 
 | Feature | Status |
 | ------- | ------ |
+| Type | Satisfy |
 | Model   | :x: |
 | Solve   | :x: |
 | Visualise | :x: |
-| App | :x: |
 | Notebook | :x: |
+| App | :x: |

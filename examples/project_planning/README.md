@@ -6,12 +6,13 @@ https://codingcompetitions.withgoogle.com/hashcode/round/00000000008caae7)
 
 | Feature | Status |
 | ------- | ------ |
+| Type | Optimise |
 | Model   | :heavy_check_mark: |
 | Solve   | :heavy_check_mark: |
-| Visualise | :heavy_check_mark: |
-| App | :x: |
+| Plot | :heavy_check_mark: |
 | Notebook | :x: |
+| App | :x: |
 
 
 ## Run Tests
-- `pytest tests/test_mentorship`
+- `pytest tests/test_project_planning`
