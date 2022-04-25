@@ -1,4 +1,3 @@
-from distutils.log import debug
 from ..prelude import *
 from typing import AsyncIterable
 from datetime import timedelta
@@ -134,10 +133,11 @@ class Status(Enum):
     ERROR         = "error"
     UNKNOWN       = "unknown"
     UNBOUNDED     = "unbounded"
-    
+    ALL_SOLUTIONS = "all-solutions"
+        
     @property
     def has_solution(self):
-        return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD]
+        return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD, Status.ALL_SOLUTIONS]
 
     @property
     def is_error(self):        
@@ -153,6 +153,7 @@ TIMEOUT       = Status.TIMEOUT
 ERROR         = Status.ERROR
 UNKNOWN       = Status.UNKNOWN
 UNBOUNDED     = Status.UNBOUNDED
+ALL_SOLUTIONS = Status.ALL_SOLUTIONS
 
 
 @attr.s(**ATTRS)
@@ -243,7 +244,6 @@ class Result:
         return f'<{self!s}>'
     
 
-
 class FlattenOptions(Enum):
     """
     Two-pass compilation means that the MiniZinc compiler will 
@@ -305,7 +305,7 @@ async def solutions(
                 debug_root = to_filename(name)
                 debug_file = debug_path / f'{debug_root}_{file.name}'
                 copy(file, debug_file)
-                
+                                
                 if file.suffix == '.mzn':
                     result.model_string += file.read_text()
                     result.model_file = str(debug_file)
@@ -349,7 +349,7 @@ async def solutions(
             timeout = options.time_limit,
             optimisation_level = options.flatten_options.value,
             free_search = '-f' in solver.stdFlags and options.free_search,
-            processes = '-p' in solver.stdFlags and options.threads
+            processes = '-p' in solver.stdFlags and options.threads,
         ):
         
             statistics = previous.statistics.copy()
@@ -379,31 +379,34 @@ async def solutions(
                 result.compile_time = to_duration(seconds=flat_time)
 
             mz_status = solution.status
-            result.solution = previous.solution
-                                                                        
+            result.solution = previous.solution.copy()
+                                                                                    
             # No solution - MiniZinc has terminated
             if solution.solution is None:
                 
                 if mz_status == MzStatus.OPTIMAL_SOLUTION:
-                    status = Status.OPTIMAL
+                    status = OPTIMAL
 
                 elif mz_status == MzStatus.UNSATISFIABLE:
-                    status = Status.UNSATISFIABLE
+                    status = UNSATISFIABLE
 
-                elif mz_status in [MzStatus.ALL_SOLUTIONS, MzStatus.SATISFIED]:
-                    status = Status.FEASIBLE
+                elif mz_status == MzStatus.SATISFIED:
+                    status = FEASIBLE
 
                 elif mz_status == MzStatus.UNBOUNDED:
-                    status = Status.UNBOUNDED
+                    status = UNBOUNDED
+
+                elif mz_status == MzStatus.ALL_SOLUTIONS:
+                    status = ALL_SOLUTIONS
 
                 elif mz_status == MzStatus.UNKNOWN:
                     if result.solve_duration > options.time_limit:
-                        status = Status.TIMEOUT
+                        status = TIMEOUT
                     else:
-                        status = Status.UNKNOWN
+                        status = UNKNOWN
 
                 else:
-                    status = Status.ERROR
+                    status = ERROR
 
                 result.status = status
 
@@ -474,7 +477,6 @@ async def solutions(
             yield result
             previous = result
 
-
     except Exception as e:
         result.error = e.args[0]
         result.status = Status.ERROR
@@ -496,3 +498,22 @@ async def solve(model : str, options : SolveOptions, **kwargs) -> Result:
         pass
     
     return result
+
+
+async def satisfy(model : str, options : SolveOptions, **kwargs):
+    """
+    Solve the model and return the best solution
+
+    Equivalent to running `solve_model` and ignoring
+    intermediate solutions
+    """
+    completed = Result()
+    results = []
+                
+    async for result in solutions(model, options=options, **kwargs):
+        if result.status == FEASIBLE:
+            results.append(result)
+        else:
+            completed = result
+           
+    return completed, results
