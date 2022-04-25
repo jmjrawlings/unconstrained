@@ -130,30 +130,23 @@ class TList(Generic[T]):
         return cls(*args)
 
 
-    def partition(self, key) -> Tuple[List[T], List[T]]:
+    def partition(self, key) -> Tuple["TList[T]", "TList[T]"]:
         inside = self.filter(key)
         outside = self.filter(lambda v: v not in inside)
         return inside, outside
 
 
-    def sum(self, key = None, default=0):
-        if key:
-            return self.map(key).sum()
-        else:
-            return sum(self.list, start=default)
+    def sum(self, default=0):
+        return sum(self.list, start=default)
 
 
-    def max(self, key = None, default=0):
-        if key:
-            return self.map(key).max()
-        else:
-            return max(self.list, default=default)
+    def max(self, default=0):
+        return max(self.list, default=default)
 
-    def min(self, key = None, default=0):
-        if key:
-            return self.map(key).min()
-        else:
-            return min(self.list, default=default)
+
+    def min(self, default=0):
+        return min(self.list, default=default)
+
 
     def clear(self):
         self.list.clear()
@@ -178,18 +171,13 @@ class TList(Generic[T]):
         return filtered
 
 
-    def map(self, f_ = None):
-        if not f_:
-            return to_list(self)
-
+    def map(self, f_, type : Type[T]) -> "TList[T]":
         if isinstance(f_, str):
-            name = f_
-            f = lambda x: getattr(x, name)
+            f = lambda x: getattr(x, f_)
         else:
             f = f_
 
-        return to_list([f(x) for x in self])
-        
+        return to_list([f(x) for x in self], type=type)
 
     def copy(self):
         """
@@ -270,7 +258,7 @@ def make_list_class(cls : Type[T]) -> Type[TList[T]]:
     return Lst
 
 
-def to_list(*args, type=None):
+def to_list(*args, type: Type[T]) -> TList[T]:
     list_class = make_list_class(type)
     list = list_class(*args)    
     return list

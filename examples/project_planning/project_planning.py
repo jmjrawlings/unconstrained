@@ -213,9 +213,9 @@ def load_scenario(path) -> Scenario:
 
 async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
                                         
-    max_score = scenario.projects.max('best_score')
-    max_day = scenario.projects.sum('days') + 1
-                                                                
+    max_score = scenario.projects.map('best_score', int).max()
+    max_day = scenario.projects.map('days', int).sum() + 1
+                                                                    
     model = MiniZincModelBuilder()
     
     model.add_section(
@@ -503,7 +503,7 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
     )
         
 
-    async for result in solve(model.string, options, name = scenario.name):
+    async for result in solutions(model.string, options, name = scenario.name):
                 
         if not result.status.has_solution:
             log.error(f'"{result.name}" failed with status "{result.status}"')
@@ -688,8 +688,8 @@ solve maximize sum(project_score);
     max_proj  = scenario.projects.count
     max_role  = scenario.roles.count
     max_cont  = scenario.contributors.count
-    max_score = scenario.projects.max('best_score')
-    max_day   = scenario.projects.sum('days') + 1
+    max_score = scenario.projects.map('best_score', int).max()
+    max_day   = scenario.projects.map('days', int).sum() + 1
 
     project_duration   = [p.days for p in scenario.projects]
     project_end_before = [p.end_before for p in scenario.projects]
@@ -701,7 +701,7 @@ solve maximize sum(project_score);
     
     contributor_skill = [c.competencies.get(s, 0) for c in scenario.contributors for s in scenario.skills.keys]
     
-    async for result in solve(
+    async for result in solutions(
         model_string,
         options,
         name = scenario.name,
@@ -770,9 +770,9 @@ def solve_with_ortools(scenario : Scenario):
     num_projs  = scenario.projects.count
     num_roles  = scenario.roles.count
     num_staff  = scenario.contributors.count
-    max_score = scenario.projects.max('best_score')
-    max_day   = scenario.projects.sum('days') + 1
-
+    max_score = scenario.projects.map('best_score', int).max()
+    max_day   = scenario.projects.map('days', int).sum() + 1
+    
     for p in scenario.projects:
         p._start = model.NewIntVar(0, max_day, f'{p.name} Start')
         p._end = model.NewIntVar(0, max_day, f'{p.name} End')

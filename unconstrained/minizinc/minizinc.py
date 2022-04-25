@@ -1,3 +1,4 @@
+from distutils.log import debug
 from ..prelude import *
 from typing import AsyncIterable
 from datetime import timedelta
@@ -6,7 +7,11 @@ from minizinc import Result as MzResult
 from minizinc import Solver as Solver
 from minizinc import Status as MzStatus
 from minizinc.CLI.instance import CLIInstance as MzInstance
+from minizinc.CLI.driver import CLIDriver as Driver
+from minizinc import find_driver
 from typing import TypedDict
+import math
+
 
 class Statistics(TypedDict, total=False):
     # Number of search nodes
@@ -87,20 +92,37 @@ COINBC  = 'coin-bc'
 
 
 def get_solver(x) -> Solver:
-        
+    """
+    Get an installed solver from the
+    given argument
+    """
+            
     if isinstance(x, Solver):
         return x
 
     solver = Solver.lookup(x)
-
+    
     if not solver:
         raise ValueError(f'Could not parse solver from {x}')
 
     return solver
 
 
-def get_installed_solvers(x):
-    return []
+def get_available_solvers() -> List[Solver]:
+    """
+    Get the available solvers
+    """
+    driver : Driver = find_driver() #type:ignore
+    solvers = {}
+    for tag, tag_solvers in driver.available_solvers(True).items():
+        for solver in tag_solvers:
+            solvers[solver.id] = solver
+
+    solvers = list(solvers.values())
+    for solver in solvers:
+        log.info(f'MiniZinc Solver "{solver.name}" is installed')
+
+    return solvers
 
 
 class Status(Enum):
@@ -141,8 +163,10 @@ class Result:
     name             : str             = string_field()
     model_string     : str             = string_field()
     model_file       : str             = string_field()
+    data_string      : str             = string_field()
+    data_file        : str             = string_field()
     method           : Method          = enum_field(Method, SATISFY)
-    status           : Status     = enum_field(Status, Status.FEASIBLE)
+    status           : Status          = enum_field(Status, Status.FEASIBLE)
     error            : str             = string_field()
     compile_time     : Duration        = duration_field()
     start_time       : DateTime        = datetime_field()
@@ -157,7 +181,7 @@ class Result:
     relative_delta   : Optional[float] = int_field(optional=True)
     
     solution : Dict[str, Any] = {}
-    
+        
     @property
     def solve_time(self) -> Period:
         return to_period(self.start_time, self.end_time)
@@ -251,58 +275,67 @@ class SolveOptions:
     free_search     : bool          = bool_field(default=True)
     
 
-async def solve(
-        model_string : str,
+async def solutions(
+        model : str,
         options : SolveOptions,
-        name    : str = 'model',
+        name : str = 'model',
         debug_path : Union[Path, str] = '/tmp',
         **parameters
         ) -> AsyncIterable[Result]:
-
-    import math
+    
     
     solver = get_solver(options.solver_id)
-
-    # Initial solution
-    result = Result(name=name)
+    debug_path = to_directory(debug_path or '/tmp', create=True)
     
+    # Initial solution
+    result = Result(name=name, model_string=model)
+        
     # Create the MiniZinc Instance
     try:
+        from shutil import copy
         instance = MzInstance(solver)
-        instance.add_string(model_string)
+        instance.add_string(result.model_string)
+                        
         for param, value in parameters.items():
             instance[param] = value
-                                            
+                                                                                                    
         with instance.files() as files:
             for file in files:
-                result.model_string += '\n'
-                result.model_string += file.read_text()
+
+                debug_root = to_filename(name)
+                debug_file = debug_path / f'{debug_root}_{file.name}'
+                copy(file, debug_file)
+                
+                if file.suffix == '.mzn':
+                    result.model_string += file.read_text()
+                    result.model_file = str(debug_file)
+                    file_type = 'model'
+                elif file.suffix == '.json':
+                    result.data_string += file.read_text()
+                    result.data_file = str(debug_file)
+                    file_type = 'data'
+                elif file.suffix == '.dzn':
+                    result.data_string += file.read_text()
+                    result.data_file = str(debug_file)
+                    file_type = 'data'
+                else:
+                    file_type = "???"
+                
+                log.info(f'"{name}" {file_type} file written to {debug_file}')
+
 
         result.method = instance.method
         result.status = Status.FEASIBLE
-        variables = set((instance.output or {}).keys())
-
-        if '_checker' in variables:
-            variables.remove('_checker')
+        variables = {key for key in (instance.output or {}).keys() if key != '_checker'}
         
     # Most likely syntax error
     except Exception as e:
         result.error = e.args[0]
-        result.model_string = model_string
         result.status = Status.ERROR
         instance = None
         variables = set()
-        log.error(result.error)
-
-    # Write generate model out for debugging
-    model_filename = to_filename(name)
-    model_folder = to_directory(debug_path, create=True)
-    model_file = model_folder / f'{model_filename}.mzn'
-    model_file.write_text(result.model_string)
-    result.model_file = str(model_file)
-    log.debug(f'"{result.name}" written to {result.model_file}')
-        
-    # if instance is None:
+        log.error(f'{type(e).__name__}: {result.error}')
+                    
     if instance is None:
         yield result
         return
@@ -310,18 +343,18 @@ async def solve(
     previous = result
                         
     try:
-        mz_result : MzResult
+        solution : MzResult
                 
-        async for mz_result in instance.solutions(
+        async for solution in instance.solutions(
             timeout = options.time_limit,
             optimisation_level = options.flatten_options.value,
             free_search = '-f' in solver.stdFlags and options.free_search,
             processes = '-p' in solver.stdFlags and options.threads
         ):
-
+        
             statistics = previous.statistics.copy()
-            statistics.update(mz_result.statistics)
-                    
+            statistics.update(solution.statistics) #type:ignore
+                                                        
             result = Result(
                 name            = name,
                 iteration       = previous.iteration + 1,
@@ -345,11 +378,11 @@ async def solve(
                 flat_time = statistics['flatTime']
                 result.compile_time = to_duration(seconds=flat_time)
 
-            mz_status = mz_result.status
+            mz_status = solution.status
             result.solution = previous.solution
                                                                         
             # No solution - MiniZinc has terminated
-            if mz_result.solution is None:
+            if solution.solution is None:
                 
                 if mz_status == MzStatus.OPTIMAL_SOLUTION:
                     status = Status.OPTIMAL
@@ -428,7 +461,7 @@ async def solve(
             
             # Extract solved variables
             for var in variables:
-                value = mz_result[var]
+                value = solution[var]
                 result.solution[var] = value
 
             if rel_gap is not None:
@@ -445,19 +478,13 @@ async def solve(
     except Exception as e:
         result.error = e.args[0]
         result.status = Status.ERROR
-        log.error(result.error)
+        log.error(f'{type(e).__name__}: {result.error}')
         
     yield result
     return
-    
 
 
-async def best_solution(
-        model_string : str,
-        options      : SolveOptions,
-        name         : str = 'model',
-        **parameters
-        ) -> Result:
+async def solve(model : str, options : SolveOptions, **kwargs) -> Result:
     """
     Solve the model and return the best solution
 
@@ -465,7 +492,7 @@ async def best_solution(
     intermediate solutions
     """
 
-    async for result in solve(model_string, name=name, options=options, **parameters):
+    async for result in solutions(model, options=options, **kwargs):
         pass
     
     return result

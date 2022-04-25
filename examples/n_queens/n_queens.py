@@ -55,7 +55,7 @@ async def solve_scenario(scenario : Scenario, options : SolveOptions, **kwargs):
         satisfy;
     """
 
-    async for result in solve(model, options, n=scenario.n, **kwargs):
+    async for result in solutions(model, options, n=scenario.n, **kwargs):
         array = result['q']
         q = 0
         for col, row in enumerate(array):
