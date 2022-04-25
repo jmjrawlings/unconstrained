@@ -8,8 +8,8 @@ L = TypeVar("L", bound="TList")
 
 
 class TList(Generic[T]):
-    val_type : Type[T] = None #type:ignore
-                            
+    val_type : Optional[Type[T]] = None
+                                
     def __init__(self, *args):
         self.list : List[T] = list()
         self.add(*args)
