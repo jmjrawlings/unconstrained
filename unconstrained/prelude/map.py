@@ -164,22 +164,22 @@ class Map(Generic[K, V]):
         return len(self)
 
     @property
-    def keys(self) -> List[K]:
+    def keys(self) -> TList[K]:
         """
         Return the keys as a list
         """
-        return list(self.dict.keys())
+        return to_list(self.dict.keys(), type=self.key_type)
 
     @property
-    def values(self) -> List[V]:
+    def values(self) -> TList[V]:
         """
         Return the keys as a list
         """
         return self.to_list()
         
 
-    def to_list(self) -> List[V]:
-        return to_list(self)
+    def to_list(self) -> TList[V]:
+        return to_list(self, type=self.val_type)
 
 
     @property
@@ -385,7 +385,7 @@ class Map(Generic[K, V]):
         return map
 
 
-    def map(self, f_):
+    def map(self, f_, type):
         """
         Return a dictionary with the elements transformed
         with the given function
@@ -396,7 +396,8 @@ class Map(Generic[K, V]):
         else:
             f = f_
 
-        return {k: f(v) for k, v in self.dict.items()}
+        new_type = map_type(self.key_type, type, self.get_key)
+        return new_type([f(x) for x in self.values])
 
 
     def copy(self: D) -> D:

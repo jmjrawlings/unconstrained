@@ -1,31 +1,22 @@
 from curses import ERR
 from unconstrained import *
 from pytest import mark, fixture
+from minizinc.CLI.driver import CLIDriver
+from minizinc import find_driver
 
 
-SOLVERS = [
-    ORTOOLS,
-    #CHUFFED,
-    #GECODE,
-    #COINBC,
-]
-
-THREADS = [
-    # 0,
-    # 2,
-    # 4,
-    8
-]
+@fixture
+def minizinc_solver() -> Solver:
+    return get_solver(ORTOOLS)
 
 
-@fixture(params=SOLVERS)
-def minizinc_solver(request) -> Solver:
-    return get_solver(request.param)
+@fixture
+def minizinc_threads() -> int:
+    return 8
 
-
-@fixture(params=THREADS)
-def minizinc_threads(request) -> int:
-    return request.param
+@fixture
+def minizinc_driver() -> CLIDriver:
+    return find_driver()
 
 
 @fixture
@@ -37,7 +28,7 @@ def minizinc_options(minizinc_solver, minizinc_threads):
 
 
 async def test_solve_satisfy(minizinc_options):
-    result = await best_solution(
+    result = await solve(
         """
         var 1..10: a;
         var bool: b;
@@ -48,7 +39,7 @@ async def test_solve_satisfy(minizinc_options):
 
 
 async def test_solve_optimise(minizinc_options):
-    result = await best_solution(
+    result = await solve(
         """
         var 1..10: a;
         var 1..10: b;
@@ -64,7 +55,7 @@ async def test_solve_optimise(minizinc_options):
 
 
 async def test_syntax_error(minizinc_options):
-    result = await best_solution(
+    result = await solve(
         """
         var 1 @#$  %$$%@@@323.10: a;
         var bool: b;
@@ -73,3 +64,27 @@ async def test_syntax_error(minizinc_options):
         )
     assert result.error
     assert result.status == ERROR
+
+
+async def test_solve_unsatisfiable(minizinc_options):
+    result = await solve(
+        """
+        var 1..1: a;
+        var 2..2: b;
+        constraint b < a;
+        """,
+        minizinc_options
+        )
+    assert result.status == UNSATISFIABLE
+
+
+def test_available_solvers():
+    solvers = get_available_solvers()
+    
+    for solver in solvers:
+        assert solver
+
+
+@mark.parametrize('tag', [ORTOOLS, CHUFFED, COINBC, GECODE])
+def test_solver_available(tag):
+    assert Solver.lookup(tag)
