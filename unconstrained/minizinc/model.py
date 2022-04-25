@@ -1,3 +1,4 @@
+from unconstrained.prelude.tlist import to_untyped_list
 from ..prelude import to_list, enumerate1
 from typing import List, Set, Union, Literal
 from textwrap import indent, dedent
@@ -135,7 +136,7 @@ def mz_array(*exprs, comments=None, index=None, newline=False, pad=10):
         add a newline after each member?
     """
 
-    list = to_list(*exprs).map(mz_value)
+    list = to_untyped_list(*exprs).map(mz_value, str)
     members = []
     for i, item in enumerate(list):
         string = str(item)

@@ -22,7 +22,7 @@ class TList(Generic[T]):
                 
         for arg in args:
 
-            # Argument is of the correct type                                    
+            # Argument is of the correct type
             if self.val_type: 
                 if isinstance(arg, self.val_type):
                     self.list.append(arg)
@@ -260,6 +260,12 @@ def make_list_class(cls : Type[T]) -> Type[TList[T]]:
 
 def to_list(*args, type: Type[T]) -> TList[T]:
     list_class = make_list_class(type)
+    list = list_class(*args)    
+    return list
+
+
+def to_untyped_list(*args) -> TList[Any]:
+    list_class = make_list_class(None) # type:ignore
     list = list_class(*args)    
     return list
 
