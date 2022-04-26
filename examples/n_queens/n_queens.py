@@ -19,7 +19,7 @@ class Scenario(HasId):
     id  : str = uuid_field()
     n   : int = int_field(comment='Size of the Scenario')
     queens : Queens = map_field(Queens)
-
+    
     @property
     def name(self):
         return f'{self.n} Queens'

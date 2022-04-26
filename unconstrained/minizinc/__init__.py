@@ -1,13 +1,13 @@
 from .minizinc import (
     SolveOptions,
-    FlattenOptions,
+    FlattenOption,
     Method,
     Solver,
+    get_solver,
+    get_available_solvers,
     Result,
     solve,
-    get_solver,
     solutions,
-    get_available_solvers,
     Driver,
     find_driver,
     Status,
@@ -27,7 +27,20 @@ from .minizinc import (
     MAXIMIZE,
     MINIMIZE,
     SATISFY,
-
+    INPUT_ORDER,
+    FIRST_FAIL,
+    SMALLEST,
+    DOM_W_DEG,
+    INDOMAIN_MIN,
+    INDOMAIN_MED,
+    INDOMAIN_RANDOM,
+    INDOMAIN_SPLIT,
+    FLATTEN_NONE,
+    FLATTEN_SINGLE_PASS,
+    FLATTEN_TWO_PASS,
+    FLATTEN_USE_GECODE,
+    FLATTEN_SHAVE,
+    FLATTEN_SAC
 )
 
 from .model import (

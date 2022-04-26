@@ -1,5 +1,5 @@
 from ..prelude import *
-from typing import AsyncIterable
+from typing import AsyncIterable, Tuple, List
 from datetime import timedelta
 from minizinc import Method
 from minizinc import Result as MzResult
@@ -144,6 +144,55 @@ class Status(Enum):
         return self in [Status.ERROR, Status.UNKNOWN, Status.UNBOUNDED]
 
 
+class VariableChoice(Enum):
+    # choose in order from the array
+    INPUT_ORDER = "input_order"
+    # choose the variable with the smallest domain size
+    FIRST_FAIL = "first_fail"
+    # choose the variable with the smallest value in its domain.
+    SMALLEST = "smallest"
+    # choose the variable with the smallest value of domain size divided by weighted degree, which is the number of times it has been in a constraint that caused failure earlier in the search
+    DOM_W_DEG = "dom_w_deg"
+
+
+class ConstrainChoice(Enum):
+    # assign the variable its smallest domain value
+    INDOMAIN_MIN = "indomain_min"
+    # assign the variable its median domain value (or the smaller of the two middle values in case of an even number of elements in the domain)
+    INDOMAIN_MED = "indomain_median"
+    # assign the variable a random value from its domain
+    INDOMAIN_RANDOM = "indomain_random"
+    # bisect the variables domain excluding the upper half
+    INDOMAIN_SPLIT = "indomain_split"
+
+
+class FlattenOption(Enum):
+    """
+    Two-pass compilation means that the MiniZinc compiler will 
+    first compile the model in order to collect some global 
+    information about it, which it can then use in a second pass 
+    to improve the resulting FlatZinc. 
+    
+    For some combinations of model and target solver,
+    this can lead to substantial improvements in solving time.
+    However, the additional time spent on the first compilation pass 
+    does not always pay off.
+    """
+
+    # Do not optimiser flattening
+    NONE = 0 
+    # Single flattening step (default)
+    SINGLE_PASS = 1 
+    # Flatten twice to make better flattening decisions for the target
+    TWO_PASS = 2 
+    # Perform root-node-propagation with Gecode (adds –two-pass)
+    USE_GECODE = 3 
+    # Probe bounds of all variables at the root node (adds –use-gecode)
+    SHAVE = 4 
+    # Probe values of all variables at the root node (adds –use-gecode)
+    SAC = 5 
+
+
 # Expose solve status at top level
 FEASIBLE      = Status.FEASIBLE
 OPTIMAL       = Status.OPTIMAL
@@ -154,6 +203,29 @@ ERROR         = Status.ERROR
 UNKNOWN       = Status.UNKNOWN
 UNBOUNDED     = Status.UNBOUNDED
 ALL_SOLUTIONS = Status.ALL_SOLUTIONS
+
+
+# Expose search variable choice at top level
+INPUT_ORDER = VariableChoice.INPUT_ORDER
+FIRST_FAIL  = VariableChoice.FIRST_FAIL
+SMALLEST    = VariableChoice.SMALLEST
+DOM_W_DEG   = VariableChoice.DOM_W_DEG
+
+
+# Expose search variable choice at top level
+INDOMAIN_MIN    = ConstrainChoice.INDOMAIN_MIN
+INDOMAIN_MED    = ConstrainChoice.INDOMAIN_MED
+INDOMAIN_RANDOM = ConstrainChoice.INDOMAIN_RANDOM
+INDOMAIN_SPLIT  = ConstrainChoice.INDOMAIN_SPLIT
+
+
+# Expose Flatten Options at top level
+FLATTEN_NONE        = FlattenOption.NONE
+FLATTEN_SINGLE_PASS = FlattenOption.SINGLE_PASS
+FLATTEN_TWO_PASS    = FlattenOption.TWO_PASS
+FLATTEN_USE_GECODE  = FlattenOption.USE_GECODE
+FLATTEN_SHAVE       = FlattenOption.SHAVE
+FLATTEN_SAC         = FlattenOption.SAC
 
 
 @attr.s(**ATTRS)
@@ -244,34 +316,13 @@ class Result:
         return f'<{self!s}>'
     
 
-class FlattenOptions(Enum):
-    """
-    Two-pass compilation means that the MiniZinc compiler will 
-    first compile the model in order to collect some global 
-    information about it, which it can then use in a second pass 
-    to improve the resulting FlatZinc. 
-    
-    For some combinations of model and target solver,
-    this can lead to substantial improvements in solving time.
-    However, the additional time spent on the first compilation pass 
-    does not always pay off.
-    """
-
-    NONE        = 0 # Do not optimiser flattening
-    SINGLE_PASS = 1 # Single flattening step (default)
-    TWO_PASS    = 2 # Flatten twice to make better flattening decisions for the target
-    USE_GECODE  = 3 # Perform root-node-propagation with Gecode (adds –two-pass)
-    SHAVE       = 4 # Probe bounds of all variables at the root node (adds –use-gecode)
-    SAC         = 5 # Probe values of all variables at the root node (adds –use-gecode)
-
-
 
 @attr.s(**ATTRS)
 class SolveOptions:
     solver_id       : str           = string_field(default="or-tools")
     threads         : int           = int_field(default=4)
     time_limit      : Duration      = duration_field(default=dict(minutes=1))
-    flatten_options : FlattenOptions= enum_field(FlattenOptions, FlattenOptions.SINGLE_PASS)
+    flatten_options : FlattenOption= enum_field(FlattenOption, FlattenOption.SINGLE_PASS)
     free_search     : bool          = bool_field(default=True)
     
 
@@ -488,32 +539,29 @@ async def solutions(
 
 async def solve(model : str, options : SolveOptions, **kwargs) -> Result:
     """
-    Solve the model and return the best solution
+    Solve the model, returning only the last (and best) solution.
 
-    Equivalent to running `solve_model` and ignoring
-    intermediate solutions
+    For intermediate solutions use the `solutions` function
     """
-
+    result = Result()
+    
     async for result in solutions(model, options=options, **kwargs):
         pass
     
     return result
 
 
-async def satisfy(model : str, options : SolveOptions, **kwargs):
+async def satisfy(model : str, options : SolveOptions, **kwargs) -> Tuple[Result, List[Result]]:
     """
-    Solve the model and return the best solution
-
-    Equivalent to running `solve_model` and ignoring
-    intermediate solutions
+    Solve the model returning all satisfactory solutions
     """
     completed = Result()
     results = []
-                
+                        
     async for result in solutions(model, options=options, **kwargs):
         if result.status == FEASIBLE:
             results.append(result)
         else:
             completed = result
-           
+
     return completed, results
