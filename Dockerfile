@@ -1,4 +1,3 @@
-# Major dependency versions
 ARG MINIZINC_VERSION=2.6.2
 ARG ORTOOLS_VERSION=9.3
 ARG ORTOOLS_BUILD=10502
@@ -25,7 +24,7 @@ ARG DEBIAN_FRONTEND
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     wget \
-  && rm -rf /var/lib/apt/lists/*
+&& rm -rf /var/lib/apt/lists/*
 
 # Install OR-Tools into MiniZinc directory
 RUN mkdir ${ORTOOLS_HOME} && \
@@ -49,13 +48,13 @@ RUN echo '{ \n\
     "needsStdlibDir": false, \n\
     "isGUIApplication": false \n\
     }' >> ${ORTOOLS_MSC}
-    
+
 
 # ===============================
-# Main OS
+# Main Layer
 # ===============================
 ARG UBUNTU_VERSION
-FROM ubuntu:${UBUNTU_VERSION}
+FROM ubuntu:${UBUNTU_VERSION} as builder
 
 # Install Python3 + helpful packages
 ARG PYTHON_VERSION
@@ -81,7 +80,7 @@ RUN apt-get update && apt-get install -y \
     fonts-powerline \
     inotify-tools \
     htop \
-  && rm -rf /var/lib/apt/lists/*
+&& rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN apt-get update \
@@ -107,11 +106,14 @@ RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install python packages
-ADD requirements.in .
 ADD requirements.txt .
-RUN pip install pip-tools
-RUN pip-compile requirements.in
-RUN pip-sync requirements.txt
+RUN pip install pip-tools && \
+    pip-sync requirements.txt
+
+# ===============================
+# Devcontainer
+# ===============================
+FROM builder as development
 
 # Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root
@@ -125,3 +127,12 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Dagger
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
     mv ./bin/dagger /usr/local/bin
+
+
+# ===============================
+# Testing
+# ===============================        
+FROM builder as testing
+
+COPY ./tests .
+COPY ./unconstrained .

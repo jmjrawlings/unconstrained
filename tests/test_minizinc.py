@@ -32,10 +32,14 @@ async def test_solve_satisfy(minizinc_options):
         """
         var 1..10: a;
         var bool: b;
+        constraint a = 1;
+        constraint b = true;
         """,
         minizinc_options
         )
-    assert result.status == FEASIBLE
+    assert result.status == ALL_SOLUTIONS, result.error
+    assert result['a']
+    assert result['b']
 
 
 async def test_solve_optimise(minizinc_options):

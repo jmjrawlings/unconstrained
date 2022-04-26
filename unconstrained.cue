@@ -14,6 +14,7 @@ dagger.#Plan & {
             {
             dockerfile: path: "Dockerfile"
             source: client.filesystem.".".read.contents
+            target: "testing"
             }
         
         pytest: 
@@ -35,7 +36,7 @@ dagger.#Plan & {
             core.#Exec & 
             {
             input : docker_build.output
-            args: ["which", "python3"]
+            args: ["python3", "-m", "pytest"]
             always: true
             }
 
@@ -43,7 +44,7 @@ dagger.#Plan & {
         core.#Exec & 
             {
             input : docker_build.output
-            args: ["ls", "-a"]
+            args: ["which", "pytest"]
             always: true
             }
 
