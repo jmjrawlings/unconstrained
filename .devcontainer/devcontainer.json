@@ -1,7 +1,12 @@
 {
     "name": "unconstrained",
-    "context": "..",
-    "dockerFile": "../Dockerfile",
+
+    "build":{
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "development"
+    },
+    
     "settings": {
         
         // Python location
