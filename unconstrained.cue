@@ -44,7 +44,7 @@ dagger.#Plan & {
         core.#Exec & 
             {
             input : docker_build.output
-            args: ["ls", "-a"]
+            args: ["which", "pytest"]
             always: true
             }
 
