@@ -133,6 +133,11 @@ RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
 # Testing
 # ===============================        
 FROM builder as testing
+ARG APP_PATH=/app
+RUN mkdir $APP_PATH
+WORKDIR $APP_PATH
 
-COPY ./tests .
-COPY ./unconstrained .
+COPY ./tests ./tests
+COPY ./unconstrained ./unconstrained 
+COPY ./examples ./examples
+COPY ./pytest.ini .

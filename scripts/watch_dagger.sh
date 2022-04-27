@@ -10,5 +10,5 @@ inotifywait \
     | \
     while read dir event file; do \
         echo "${file} changed - running dagger" ; \
-        dagger do debug --log-level debug --log-format plain ;\
+        dagger do Test --log-level debug --log-format plain ;\
     done
