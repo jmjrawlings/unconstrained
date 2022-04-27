@@ -56,7 +56,11 @@ dagger.#Plan & {
             ".": read: {
                 contents: dagger.#FS
             }
-                
+
+        platform: {
+            os: "linux"
+            arch: "amd64"
+        }
 
     }
 }
