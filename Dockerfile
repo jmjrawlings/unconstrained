@@ -21,7 +21,7 @@ ENV ORTOOLS_HOME=${MINIZINC_HOME}/ortools
 ENV ORTOOLS_MSC=${MINIZINC_HOME}/solvers/ortools.msc
 ARG DEBIAN_FRONTEND
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
 && rm -rf /var/lib/apt/lists/*
@@ -61,7 +61,7 @@ ARG PYTHON_VERSION
 ARG DEBIAN_FRONTEND
 ENV PYTHON_NAME=python$PYTHON_VERSION
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     $PYTHON_NAME \
     $PYTHON_NAME-dev \
     $PYTHON_NAME-venv \
@@ -83,8 +83,8 @@ RUN apt-get update && apt-get install -y \
 && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
-RUN apt-get update \
-    && apt-get install -y apt-transport-https ca-certificates curl gnupg2 lsb-release \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https ca-certificates curl gnupg2 lsb-release \
     && curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update \
@@ -133,6 +133,11 @@ RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
 # Testing
 # ===============================        
 FROM builder as testing
+ARG APP_PATH=/app
+RUN mkdir $APP_PATH
+WORKDIR $APP_PATH
 
-COPY ./tests .
-COPY ./unconstrained .
+COPY ./tests ./tests
+COPY ./unconstrained ./unconstrained 
+COPY ./examples ./examples
+COPY ./pytest.ini .

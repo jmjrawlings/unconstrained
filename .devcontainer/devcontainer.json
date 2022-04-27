@@ -4,7 +4,7 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "development"
+        "target": "development",
     },
     
     "settings": {
@@ -46,17 +46,25 @@
     },
 
     "extensions": [
+        // Offical python plugin
 		"ms-python.python",
+        // Jupyter notebook integration
 		"ms-toolsai.jupyter",
+        // MiniZinc syntax highlighting
 		"dekkerone.minizinc",
+        // Access workspace via web browser (good for .html)
         "ritwickdey.liveserver",
+        // CueLang syntax highlighting
         "nickgo.cuelang",
+        // Markdown emoji previews
         "bierner.markdown-emoji"
 	],
     
     "runArgs": [ 
         "--init",
-        "--hostname", "host"
+        "--hostname", "host",
+        // Attempting to solve slow apt download speeds
+        "--net", "host"
     ],
 
     "mounts":[

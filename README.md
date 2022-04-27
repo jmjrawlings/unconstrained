@@ -2,15 +2,17 @@
 
 Constraint Programming for Fun and Profit.
 
-Unconstrained seeks to be a comprehensive and productive environment for modelling and solving Constraint Programming problems using 
-MiniZinc and Python.
+This repository represents my search for 
+a comprehensive and productive environment to modelling and solving Constraint Programming problems.
+
 
 ## Goals
 - model problems
 - compile models
 - solve models
 - evaluate solver performance
-- compare models/solvers
+- compare models
+- compare solvers
 - visualise solutions
 - interactive frontend
 - model persistence
@@ -18,6 +20,8 @@ MiniZinc and Python.
 - python package management
 - local and remote CI/CD
 - open source libraries only
+- containerisation
+
 
 ## Non-Goals
 - a production ready minizinc model builder
@@ -27,13 +31,15 @@ MiniZinc and Python.
 - comprehensive documentation
 - backwards compatibility
 
+
 ## Quickstart
 - Install VSCode
 - Install VSCode Remote Development Pack
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
-## Examples
+
+## Included Examples
 
 | Name | Type | Model | Solve | Plot | .ipynb | App | Link |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
@@ -57,7 +63,7 @@ MiniZinc and Python.
 - [Google OR-Tools Manual](https://acrogenesis.com/or-tools/documentation/user_manual/)
 
 
-### Python
+### Python Packages
 - [Altair](https://altair-viz.github.io/)
 - [Pytest](https://docs.pytest.org/en/latest/)
 - [Attrs](https://www.attrs.org/en/stable/)
@@ -66,7 +72,7 @@ MiniZinc and Python.
 - [Minizinc Python](https://github.com/MiniZinc/minizinc-python)
 
 
-### Development
+### Development Tools
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [VSCode Devcontainer](https://code.visualstudio.com/docs/remote/containers)
 - [Dagger](https://dagger.io/)
