@@ -4,7 +4,7 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "development",
+        "target": "dev",
     },
     
     "settings": {

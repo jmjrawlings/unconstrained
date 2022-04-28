@@ -24,76 +24,76 @@ dagger.#Plan & {
     }
     
     actions: {
-                
-        BuildTestingImage: core.#Dockerfile & 
-            {
-            dockerfile: path: "Dockerfile"
-            source: client.filesystem.".".read.contents
-            target: "testing"
-            }
+        
+        // Read a docker image target from the main Dockerfile
+        #_buildDockfileImage: {
+            name: string
+            _build: core.#Dockerfile & 
+                {
+                dockerfile: path: "Dockerfile"
+                target: name
+                source: client.filesystem.".".read.contents
+                }
+            
+            rootfs: _build.output
+            config: _build.config
+        }
 
-        TestingImage: {
-            rootfs: BuildTestingImage.output
-            config: BuildTestingImage.config
+        // Load a docker image into the hosts docker engine
+        #_loadDockerImage: cli.#Load & {
+            host:  client.network."unix:///var/run/docker.sock".connect
         }
         
-        LoadTestingImage: cli.#Load & 
-            {
-            image: TestingImage
-            host:  client.network."unix:///var/run/docker.sock".connect
-            tag:   "unconstrained:testing"
-            }
+        // Test Image
+        TestImage: #_buildDockfileImage & {name: "test"}
 
-        BuildDevelopmentImage: core.#Dockerfile & 
-            {
-            dockerfile: path: "Dockerfile"
-            source: client.filesystem.".".read.contents
-            target: "development"
-            }
-
-        DevelopmentImage: {
-            rootfs: BuildDevelopmentImage.output
-            config: BuildDevelopmentImage.config
-        }
-                
-        LoadDevelopmentImage: cli.#Load & 
-            {
-            image: DevelopmentImage            
-            host:  client.network."unix:///var/run/docker.sock".connect
-            tag:   "unconstrained:development"
-            }
-
-        PyTest: docker.#Run & 
-            {
-            always: true
-            input: TestingImage
-            command: {
-                name: "pytest"
-            }
-            }
+        // Dev Image        
+        DevImage: #_buildDockfileImage & {name: "dev"}
         
-        TestMiniZincInstalled: docker.#Run & 
-            {
-            input : TestingImage
-            command: {
-                name: "minizinc"
-                args: ["--version"]
-            }
-            }
+        // Load the Test image into host docker engine
+        LoadTest: #_loadDockerImage & {
+            image: TestImage
+            tag: "unconstrained:test"
+        }
 
-        TestPythonInstalled: docker.#Run & 
-            {
-            input : TestingImage
-            command: {
-                name: "python3"
-                args: ["--version"]
-            }
-            }
+        // Load the Dev image into host docker engine
+        LoadDev: #_loadDockerImage & {
+            image: DevImage
+            tag: "unconstrained:dev"
+        }
 
+        // Run the test suite
         Test: {
-            pytest: PyTest
-            minizinc: TestMiniZincInstalled
-            python: TestPythonInstalled
+            
+            // Test python is installed
+            PythonInstalled: docker.#Run & 
+                {
+                input : TestImage
+                command: {
+                    name: "python3"
+                    args: ["--version"]
+                }
+            }
+
+            // Test MiniZinc is installed
+            MiniZincInstalled: docker.#Run & 
+                {
+                input : TestImage
+                command: {
+                    name: "minizinc"
+                    args: ["--version"]
+                }
+                }
+
+            // Run PyTest suite
+            PyTest: docker.#Run & 
+                {
+                input: TestImage
+                command: {
+                    name: "pytest"
+                }
+            }
+
         }
     }
 

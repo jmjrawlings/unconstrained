@@ -113,7 +113,7 @@ RUN pip install pip-tools && \
 # ===============================
 # Devcontainer
 # ===============================
-FROM builder as development
+FROM builder as dev
 
 # Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root
@@ -129,19 +129,21 @@ RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
     mv ./bin/dagger /usr/local/bin
 
 # Install Development packages
-RUN pip-sync /requirements/development.txt
+COPY ./requirements/dev.txt /tmp/requirements.txt
+RUN pip-sync /tmp/requirements.txt
 
 
 # ===============================
-# Testing
+# Test
 # ===============================        
-FROM builder as testing
+FROM builder as test
 ARG APP_PATH=/app
 RUN mkdir $APP_PATH
 WORKDIR $APP_PATH
 
 # Install Testing packages
-RUN pip-sync /requirements/testing.txt
+COPY ./requirements/test.txt requirements.txt
+RUN pip-sync requirements.txt
 
 COPY ./tests ./tests
 COPY ./unconstrained ./unconstrained 
