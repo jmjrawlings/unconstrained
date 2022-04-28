@@ -36,7 +36,7 @@ RUN echo '{ \n\
     "id": "org.ortools.ortools", \n\
     "name": "OR Tools", \n\
     "description": "Or Tools FlatZinc executable", \n\
-    "version": "9.3/stable", \n\
+    "version": "$ORTOOLS_VERSION/stable", \n\
     "mznlib": "../ortools/share/minizinc", \n\
     "executable": "../ortools/bin/fzn-or-tools",     \n\
     "tags": ["cp","int", "lcg", "or-tools"], \n\
@@ -105,10 +105,10 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install python packages
-ADD requirements.txt .
+# Install base python packages
+ADD ./requirements /requirements
 RUN pip install pip-tools && \
-    pip-sync requirements.txt
+    pip-sync /requirements/base.txt
 
 # ===============================
 # Devcontainer
@@ -128,6 +128,9 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
     mv ./bin/dagger /usr/local/bin
 
+# Install Development packages
+RUN pip-sync /requirements/development.txt
+
 
 # ===============================
 # Testing
@@ -136,6 +139,9 @@ FROM builder as testing
 ARG APP_PATH=/app
 RUN mkdir $APP_PATH
 WORKDIR $APP_PATH
+
+# Install Testing packages
+RUN pip-sync /requirements/testing.txt
 
 COPY ./tests ./tests
 COPY ./unconstrained ./unconstrained 
