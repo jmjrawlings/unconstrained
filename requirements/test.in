@@ -1,0 +1,5 @@
+-r base.in
+-c base.txt
+pytest
+pytest-watch
+pytest-asyncio

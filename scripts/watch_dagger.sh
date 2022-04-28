@@ -9,6 +9,6 @@ inotifywait \
     unconstrained.cue \
     | \
     while read dir event file; do \
-        echo "${file} changed - running dagger" ; \
-        dagger do Test --log-level debug --log-format plain ;\
+        echo "${file} changed - running dagger task $1" ; \
+        dagger do $1 --log-level debug --log-format plain ;\
     done
