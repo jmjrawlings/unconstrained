@@ -1,4 +1,3 @@
-from curses import ERR
 from unconstrained import *
 from pytest import mark, fixture
 from minizinc.CLI.driver import CLIDriver
@@ -70,6 +69,7 @@ async def test_syntax_error(minizinc_options):
     assert result.status == ERROR
 
 
+@mark.filterwarnings("ignore:model inconsistency")
 async def test_solve_unsatisfiable(minizinc_options):
     result = await solve(
         """

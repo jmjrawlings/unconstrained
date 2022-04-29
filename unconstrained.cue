@@ -24,9 +24,9 @@ dagger.#Plan & {
     }
     
     actions: {
-        
-        // Read a docker image target from the main Dockerfile
-        #_buildDockfileImage: {
+
+        // Build a target image from the main Dockerfile
+        #_buildDockfileTarget: {
             name: string
             _build: core.#Dockerfile & 
                 {
@@ -38,18 +38,22 @@ dagger.#Plan & {
             rootfs: _build.output
             config: _build.config
         }
-
+        
         // Load a docker image into the hosts docker engine
         #_loadDockerImage: cli.#Load & {
             host:  client.network."unix:///var/run/docker.sock".connect
         }
-        
-        // Test Image
-        TestImage: #_buildDockfileImage & {name: "test"}
 
+        // Test Image
+        TestImage: #_buildDockfileTarget & {
+            name: "test"
+        }
+                
         // Dev Image        
-        DevImage: #_buildDockfileImage & {name: "dev"}
-        
+        DevImage: #_buildDockfileTarget & {
+            name: "dev"
+        }
+                
         // Load the Test image into host docker engine
         LoadTest: #_loadDockerImage & {
             image: TestImage

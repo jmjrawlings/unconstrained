@@ -7,29 +7,40 @@ a comprehensive and productive environment to modelling and solving Constraint P
 
 
 ## Goals
-- model problems
-- compile models
-- solve models
-- evaluate solver performance
-- compare models
-- compare solvers
-- visualise solutions
-- interactive frontend
-- model persistence
-- development environment
-- python package management
-- local and remote CI/CD
-- open source libraries only
-- containerisation
+- Model problems
+- Compile models
+- Solve models
+- Evaluate solver performance
+- Compare models
+- Compare solver backends
+- Visualise solutions/convergence
+- Interactive frontend app
+- Model persistence
+- Development environment
+- Python packages
+- Python package management
+- Logging
+- Local and remote CI/CD
+- Containerisation
+- Cloud compute (maybe?)
 
 
 ## Non-Goals
-- a production ready minizinc model builder
-- a production ready anything
-- a reusable python package
-- a 'framework'
-- comprehensive documentation
-- backwards compatibility
+- A production ready minizinc model builder
+- A production ready anything
+- A reusable python package
+- A 'framework'
+- Comprehensive documentation
+- Backwards compatibility
+
+
+## Principles
+- Use Free open source tools
+- Embrace development environments
+- Embrace terminal
+- Use python type hints liberally
+- Hot-reload wherever possible
+- Integration Tests
 
 
 ## Quickstart
@@ -47,6 +58,23 @@ a comprehensive and productive environment to modelling and solving Constraint P
 | Nurse Rostering | OPT | :x: | :x: | :x: | :x: | :x: | [link](./examples/nurse_rostering/README.md) |
 | Project Planning | OPT | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | [link](./examples/project_planning/README.md) |
 
+
+## Repository Structure
+```
+.
+├── book                # Jupyter Book ouput
+├── cue.mod             # Dagger dependencies
+├── examples            # Example problems   
+├── scripts             # Helper scripts
+├── requirements        # Python requirement files
+├── unconstrained       # Source code
+├── tests               # Test suite
+├── Dockerfile             
+├── pytest.ini              
+├── LICENSE.md              
+├── README.md               
+└── unconstrained.cue   # Dagger build file           
+```
 
 
 ## Helpful Links
