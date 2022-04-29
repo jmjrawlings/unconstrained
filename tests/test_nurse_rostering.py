@@ -3,7 +3,6 @@ from examples.nurse_rostering import *
 from pytest import mark, fixture, param
 
 
-
 @fixture
 def scenario() -> Scenario:
     return load_scenario()
