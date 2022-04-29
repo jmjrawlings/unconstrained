@@ -1,5 +1,5 @@
 # SqlLite databases
-.db
+*.db
 
 # Jupyer book output
 book/_build
