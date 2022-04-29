@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Watch for changes in the Dagger CUE file and rerun 
 # the debug task
 inotifywait \
