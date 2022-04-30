@@ -73,8 +73,6 @@
          "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
     ],
     
-    "onCreateCommand": "git config --global --add safe.directory /app",
-    
     // Custom project path in container (default is /workspaces/{foldername})
     "workspaceFolder": "/app",
     "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
