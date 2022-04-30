@@ -1,69 +1,80 @@
 from unconstrained import *
+from sqlmodel import Field, SQLModel, create_engine, Relationship, Session
 
-@attr.s(**ATTRS)
-class Nurse(HasId):
-    # Fields
-    nurse_id : int = int_field()
+sqlite_name = "nurse_rostering"
+sqlite_url = f"sqlite:///{sqlite_name}.db"
 
-    # Solution
-    shift_ids : TList[int] = list_field(int)
+
+def primary_key(**kwargs):
+    return Field(default=None, primary_key=True, **kwargs)
+
+
+def foreign_key(key, **kwargs):
+    return Field(default=None, foreign_key=key, **kwargs)
+
+
+def backref(name, **kwargs):
+    return Relationship(back_populates=name, **kwargs)
+
+
+class Day(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    number : int
+    shifts : List["Shift"] = backref('day')
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('days')
+
+
+class Nurse(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    shifts: List["Shift"] = backref('nurse')
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('nurses')
         
-    # References
-    shifts : "Shifts"
+
+class Shift(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    number : int
+    day_id : int = foreign_key('day.id')
+    day : "Day" = backref('shifts')
+    nurse_id : Optional[int] = foreign_key('nurse.id')
+    nurse : Optional[Nurse] = backref('shifts')
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('shifts')
+
+
+class Scenario(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    days   : List[Day] = backref('scenario')
+    shifts : List[Shift] = backref('scenario')
+    nurses : List[Nurse] = backref('scenario')
+
+
+engine = create_engine(sqlite_url, echo=True)
+SQLModel.metadata.create_all(engine)
+
+
+def create_scenario(engine=engine) -> Scenario:
     
-    def get_id(self):
-        return self.nurse_id
+    with Session(engine) as session:
+        scenario = Scenario()
+                        
+        for i in range(1, 4):
+            day = Day(number=i, scenario=scenario)
+            
+            for i in [1,2,3]:
+                shift = Shift(number=i, day=day, scenario=scenario)
 
+        session.add(scenario)
+                                                
+        for day in scenario.days:
+            log.info(f'day {day.number}')
+            for shift in day.shifts:
+                log.info(f'day {day.number} - shift {shift.number}')
+        
+        session.commit()
 
-Nurses = map_type(int, Nurse)
-
-
-@attr.s(**ATTRS)
-class Shift(HasId):
-    
-    # Fields
-    shift_id : int = int_field()
-    shift_no : int = int_field()
-    day_id : int = int_field()
-    
-    # Solution
-    nurse_id : int = int_field()
-
-    # References
-    day : "Day"
-                
-    def get_id(self):
-        return self.shift_id
-
-
-class Shifts(Map[int,Shift]):
-    val_type = Shift
-
-
-@attr.s(**ATTRS)
-class Day(HasId):
-    # Fields
-    day_id : int = int_field()
-    shift_ids : TList[int] = list_field(int)
-    
-    # References
-    shifts : Shifts
-    
-
-Days = map_type(int, Day)
-
-
-@attr.s(**ATTRS)
-class Scenario:
-    nurses : Nurses = map_field(Nurses)
-    days   : Days   = map_field(Days)
-    shifts : Shifts = map_field(Shifts)
-    
-
-def load_scenario() -> Scenario:
-    pass
-
-
+    return scenario
 
 
 async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):

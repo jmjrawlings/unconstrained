@@ -1,3 +1,6 @@
+# SqlLite databases
+*.db
+
 # Jupyer book output
 book/_build
 

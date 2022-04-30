@@ -5,10 +5,11 @@ ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG DEBIAN_FRONTEND=noninteractive
+ARG APP_PATH=/app
 
-# ===============================
-# MiniZinc + ORTools Solver Layer
-# ===============================
+# ======================================================================
+# MiniZinc + ORTools Solver 
+# ======================================================================
 FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 
 ARG MINIZINC_HOME
@@ -50,17 +51,22 @@ RUN echo '{ \n\
     }' >> ${ORTOOLS_MSC}
 
 
-# ===============================
-# Main Layer
-# ===============================
+# ======================================================================
+# Base
+# ======================================================================
 ARG UBUNTU_VERSION
 FROM ubuntu:${UBUNTU_VERSION} as builder
 
 # Install Python3 + helpful packages
 ARG PYTHON_VERSION
 ARG DEBIAN_FRONTEND
+ARG APP_PATH
 ENV PYTHON_NAME=python$PYTHON_VERSION
 
+RUN mkdir $APP_PATH
+WORKDIR $APP_PATH
+
+# Install packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     $PYTHON_NAME \
     $PYTHON_NAME-dev \
@@ -72,14 +78,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     curl \
     gnupg2 \ 
-    micro \
-    openssh-client \
-    less \
-    git \    
-    locales \
-    fonts-powerline \
-    inotify-tools \
-    htop \
+    sqlite3 \
 && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
@@ -105,16 +104,29 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install base python packages
-ADD ./requirements /requirements
-RUN pip install pip-tools && \
-    pip-sync /requirements/base.txt
+# Install Python packages
+ADD ./requirements/base.txt requirements.txt
+RUN pip install pip-tools
+RUN pip-sync requirements.txt
 
-# ===============================
+
+# ======================================================================
 # Devcontainer
-# ===============================
+# ======================================================================
 FROM builder as dev
 
+# Install packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    micro \
+    git \    
+    less \
+    openssh-client \
+    locales \
+    fonts-powerline \
+    inotify-tools \
+    htop \
+  && rm -rf /var/lib/apt/lists/*
+    
 # Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.2/zsh-in-docker.sh)" -- \
@@ -128,20 +140,17 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh && \
     mv ./bin/dagger /usr/local/bin
 
-# Install Development packages
-COPY ./requirements/dev.txt /tmp/requirements.txt
-RUN pip-sync /tmp/requirements.txt
+# Install Python packages
+COPY ./requirements/dev.txt requirements.txt
+RUN pip-sync requirements.txt
 
 
-# ===============================
+# ======================================================================
 # Test
-# ===============================        
+# ======================================================================
 FROM builder as test
-ARG APP_PATH=/app
-RUN mkdir $APP_PATH
-WORKDIR $APP_PATH
 
-# Install Testing packages
+# Install Python packages
 COPY ./requirements/test.txt requirements.txt
 RUN pip-sync requirements.txt
 

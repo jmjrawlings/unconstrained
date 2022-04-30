@@ -10,9 +10,10 @@
     "settings": {
         
         // Python location
+        "python.defaultInterpreterPath": "/opt/venv/bin",
         "python.pythonPath": "/opt/venv/bin",
         "python.disableInstallationCheck": true,
-                
+                        
         // Typechecking and linting
         "python.languageServer": "Pylance",
         "python.linting.enabled": true,
@@ -57,20 +58,26 @@
         // CueLang syntax highlighting
         "nickgo.cuelang",
         // Markdown emoji previews
-        "bierner.markdown-emoji"
+        "bierner.markdown-emoji",
+        // Browse SQLite databases
+        "alexcvzz.vscode-sqlite"
 	],
     
     "runArgs": [ 
         "--init",
         "--hostname", "host",
-        // Attempting to solve slow apt download speeds
-        "--net", "host"
+         "--net", "host"
     ],
-
+    
     "mounts":[
-         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" 
+        // Access hosts docker engine
+         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
     ],
-
+    
+    // Custom project path in container (default is /workspaces/{foldername})
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    
     "containerEnv": {
         "DO_NOT_TRACK" : "1"
     }

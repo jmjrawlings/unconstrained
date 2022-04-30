@@ -13,7 +13,6 @@ class Queen(HasId):
 
 Queens = map_type(int, Queen)
 
-
 @attr.s(**ATTRS)
 class Scenario(HasId):
     id  : str = uuid_field()

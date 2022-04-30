@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Watch for changes in the source directory and rebuild
 # the jupyter book
 inotifywait \

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Watch for changes in the Dagger CUE file and rerun 
-# the debug task
+# Watch for changes in the Dagger CUE file and rerun
+# the given action
 inotifywait \
     --quiet \
     --monitor \
@@ -10,6 +10,6 @@ inotifywait \
     unconstrained.cue \
     | \
     while read dir event file; do \
-        echo "${file} changed - running dagger task $1" ; \
+        echo "${file} changed - running dagger action $1" ; \
         dagger do $1 --log-level debug --log-format plain ;\
     done
