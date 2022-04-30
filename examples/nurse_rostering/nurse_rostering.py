@@ -3,7 +3,6 @@ from sqlmodel import Field, SQLModel, create_engine, Relationship, Session
 
 sqlite_name = "database"
 sqlite_url = f"sqlite:///{sqlite_name}.db"
-engine = create_engine(sqlite_url, echo=True)
 
 
 def primary_key(**kwargs):
@@ -48,12 +47,15 @@ class Scenario(SQLModel, table=True):
     days   : List[Day] = backref('scenario')
     shifts : List[Shift] = backref('scenario')
     nurses : List[Nurse] = backref('scenario')
-    
+
+engine = create_engine(sqlite_url, echo=True)
+SQLModel.metadata.create_all(engine)
+
 
 def load_scenario(engine=engine) -> Scenario:
     with Session(engine) as session:
         scenario = Scenario()
-        
+                
         for i in range(1, 4):
             day = Day(number=i, scenario=scenario)
             scenario.days.append(day)
