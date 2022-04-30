@@ -1,7 +1,7 @@
 from unconstrained import *
 from sqlmodel import Field, SQLModel, create_engine, Relationship, Session
 
-sqlite_name = "database"
+sqlite_name = "nurse_rostering"
 sqlite_url = f"sqlite:///{sqlite_name}.db"
 
 
@@ -15,6 +15,7 @@ def foreign_key(key, **kwargs):
 
 def backref(name, **kwargs):
     return Relationship(back_populates=name, **kwargs)
+
 
 class Day(SQLModel, table=True):
     id : Optional[int] = primary_key()
@@ -48,21 +49,31 @@ class Scenario(SQLModel, table=True):
     shifts : List[Shift] = backref('scenario')
     nurses : List[Nurse] = backref('scenario')
 
+
 engine = create_engine(sqlite_url, echo=True)
 SQLModel.metadata.create_all(engine)
 
 
-def load_scenario(engine=engine) -> Scenario:
+def create_scenario(engine=engine) -> Scenario:
+    
     with Session(engine) as session:
         scenario = Scenario()
-                
+                        
         for i in range(1, 4):
             day = Day(number=i, scenario=scenario)
-            scenario.days.append(day)
+            
+            for i in [1,2,3]:
+                shift = Shift(number=i, day=day, scenario=scenario)
 
         session.add(scenario)
-        session.commit()
+                                                
+        for day in scenario.days:
+            log.info(f'day {day.number}')
+            for shift in day.shifts:
+                log.info(f'day {day.number} - shift {shift.number}')
         
+        session.commit()
+
     return scenario
 
 
