@@ -10,9 +10,10 @@
     "settings": {
         
         // Python location
+        "python.defaultInterpreterPath": "/opt/venv/bin",
         "python.pythonPath": "/opt/venv/bin",
         "python.disableInstallationCheck": true,
-                
+                        
         // Typechecking and linting
         "python.languageServer": "Pylance",
         "python.linting.enabled": true,
