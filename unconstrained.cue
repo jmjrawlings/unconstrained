@@ -26,7 +26,7 @@ dagger.#Plan & {
     actions: {
 
         // Build a target image from the main Dockerfile
-        #_buildDockfileTarget: {
+        #_dockerfileTarget: {
             name: string
             _build: core.#Dockerfile & 
                 {
@@ -45,24 +45,24 @@ dagger.#Plan & {
         }
 
         // Test Image
-        TestImage: #_buildDockfileTarget & {
+        _testImage: #_dockerfileTarget & {
             name: "test"
         }
                 
         // Dev Image        
-        DevImage: #_buildDockfileTarget & {
+        _devImage: #_dockerfileTarget & {
             name: "dev" 
         }
                 
         // Load the Test image into host docker engine
         LoadTest: #_loadDockerImage & {
-            image: TestImage
+            image: _testImage
             tag: "unconstrained:test"
         }
 
         // Load the Dev image into host docker engine
         LoadDev: #_loadDockerImage & {
-            image: DevImage
+            image: _devImage
             tag: "unconstrained:dev"
         }
 
@@ -72,7 +72,7 @@ dagger.#Plan & {
             // Test python is installed
             PythonInstalled: docker.#Run & 
                 {
-                input : TestImage
+                input : _testImage
                 command: {
                     name: "python3"
                     args: ["--version"]
@@ -82,7 +82,7 @@ dagger.#Plan & {
             // Test MiniZinc is installed
             MiniZincInstalled: docker.#Run & 
                 {
-                input : TestImage
+                input : _testImage
                 command: {
                     name: "minizinc"
                     args: ["--version"]
@@ -92,13 +92,11 @@ dagger.#Plan & {
             // Run PyTest suite
             PyTest: docker.#Run & 
                 {
-                input: TestImage
+                input: _testImage
                 command: {
                     name: "pytest"
                 }
             }
-
-
         }
     }
 
