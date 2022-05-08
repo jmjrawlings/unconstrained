@@ -49,18 +49,18 @@ dagger.#Plan & {
             name: "test"
         }
                 
-        // Dev Image        
+        // Dev Image
         _devImage: #_dockerfileTarget & {
             name: "dev" 
         }
                 
-        // Load the Test image into host docker engine
+        // Load the Test image into the hosts docker engine
         LoadTest: #_loadDockerImage & {
             image: _testImage
             tag: "unconstrained:test"
         }
 
-        // Load the Dev image into host docker engine
+        // Load the Dev image into the hosts docker engine
         LoadDev: #_loadDockerImage & {
             image: _devImage
             tag: "unconstrained:dev"
@@ -69,7 +69,7 @@ dagger.#Plan & {
         // Run the test suite
         Test: {
             
-            // Test python is installed
+            // Test Python is installed
             PythonInstalled: docker.#Run & 
                 {
                 input : _testImage

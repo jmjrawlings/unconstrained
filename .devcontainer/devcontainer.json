@@ -4,24 +4,26 @@
     // Custom project path in container (default is /workspaces/{foldername})
     "workspaceFolder": "/unconstrained",
     "workspaceMount": "source=${localWorkspaceFolder},target=/unconstrained,type=bind,consistency=cached",
-    
+            
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
         "target": "dev",
         "args": {
             "USER_UID": "1000",
-            "USER_GID": "1000",
-            "USER_NAME": "hrkn",
-            "APP_PATH": "unconstrained"
+            "USER_GID": "1000",        
+            "USER_NAME": "harken",
+            "APP_PATH": "/unconstrained"
         }
     },
-
+            
     "mounts":[
         // Access hosts docker engine
-         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+        // Avoid VSCode extension reinstalls, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
+        // "source=unconstrained-vscode-extensions,target=/home/unco/.vscode-server/extensions,type=volume",
     ],
-
+            
     "settings": {
         
         // Python location

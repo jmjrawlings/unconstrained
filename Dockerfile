@@ -1,14 +1,18 @@
+# ********************************************************
+# * Key Arguments
+# ********************************************************
 ARG MINIZINC_VERSION=2.6.2
+ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG ORTOOLS_VERSION=9.3
 ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
-ARG MINIZINC_HOME=/usr/local/share/minizinc
-ARG DEBIAN_FRONTEND=noninteractive
+ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
-ARG USER_NAME=hrkn
+ARG USER_NAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
 # * MiniZinc Builder
@@ -24,39 +28,40 @@ FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 ARG MINIZINC_HOME
 ARG ORTOOLS_VERSION
 ARG ORTOOLS_BUILD
+ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
 ARG UBUNTU_VERSION
-ENV ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v${ORTOOLS_VERSION}.${ORTOOLS_BUILD}
-ENV ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_TAR_NAME}.tar.gz
-ENV ORTOOLS_HOME=${MINIZINC_HOME}/ortools
-ENV ORTOOLS_MSC=${MINIZINC_HOME}/solvers/ortools.msc
+ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v$ORTOOLS_VERSION.$ORTOOLS_BUILD
+ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v$ORTOOLS_VERSION/$ORTOOLS_TAR_NAME.tar.gz
+ARG ORTOOLS_MSC=$MINIZINC_HOME/solvers/ortools.msc
 ARG DEBIAN_FRONTEND
 
+# Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         wget
     
 # Install OR-Tools into MiniZinc directory
-RUN mkdir ${ORTOOLS_HOME} && \
-    wget -c ${ORTOOLS_TAR_URL} -O - | \
-    tar -xz -C ${ORTOOLS_HOME} --strip-components=1
+RUN mkdir $ORTOOLS_HOME && \
+    wget -c $ORTOOLS_TAR_URL -O - | \
+    tar -xz -C $ORTOOLS_HOME --strip-components=1
 
 # Register OR-Tools as a MiniZinc solver
 RUN echo '{ \n\
-    "id": "org.ortools.ortools", \n\
-    "name": "OR Tools", \n\
-    "description": "Or Tools FlatZinc executable", \n\
-    "version": "$ORTOOLS_VERSION/stable", \n\
-    "mznlib": "../ortools/share/minizinc", \n\
-    "executable": "../ortools/bin/fzn-or-tools",     \n\
+    "id": "org.ortools.ortools",\n\
+    "name": "OR Tools",\n\
+    "description": "Or Tools FlatZinc executable",\n\
+    "version": "'$ORTOOLS_VERSION/stable'",\n\
+    "mznlib": "../ortools/share/minizinc",\n\
+    "executable": "../ortools/bin/fzn-or-tools",\n\
     "tags": ["cp","int", "lcg", "or-tools"], \n\
     "stdFlags": ["-a", "-n", "-p", "-f", "-r", "-v", "-l", "-s"], \n\
-    "supportsMzn": false, \n\
-    "supportsFzn": true, \n\
-    "needsSolns2Out": true, \n\
-    "needsMznExecutable": false, \n\
-    "needsStdlibDir": false, \n\
-    "isGUIApplication": false \n\
-    }' >> ${ORTOOLS_MSC}
+    "supportsMzn": false,\n\
+    "supportsFzn": true,\n\
+    "needsSolns2Out": true,\n\
+    "needsMznExecutable": false,\n\
+    "needsStdlibDir": false,\n\
+    "isGUIApplication": false\n\
+}' >> $ORTOOLS_MSC
 
 
 # ********************************************************
@@ -68,15 +73,13 @@ RUN echo '{ \n\
 # ********************************************************
 
 ARG UBUNTU_VERSION
-FROM ubuntu:${UBUNTU_VERSION} as builder
+FROM ubuntu:$UBUNTU_VERSION as builder
 
+ARG PYTHON_VENV
 ARG PYTHON_VERSION
 ARG DEBIAN_FRONTEND
-ARG APP_PATH
 ENV PYTHON_NAME=python$PYTHON_VERSION
-
-RUN mkdir $APP_PATH
-WORKDIR $APP_PATH
+ENV VIRTUAL_ENV=$PYTHON_VENV
 
 # Install Python3 + helpful packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -94,14 +97,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         sudo \
         wget
 
-
 # Copy MiniZinc + ORTools from the build layer
 ARG MINIZINC_HOME
-COPY --from=minizinc-builder ${MINIZINC_HOME} ${MINIZINC_HOME}
+COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
 COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # Create a python virtual environment
-ENV VIRTUAL_ENV=/opt/venv
+ARG APP_PATH
+RUN mkdir $APP_PATH
+WORKDIR $APP_PATH
+
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
@@ -110,7 +115,8 @@ RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
 ADD ./requirements/base.txt requirements.txt
 RUN pip install pip-tools && pip-sync requirements.txt
 
-# Create an alternate user with root priveleges
+# Create an alternate user with passwordless sudo 
+# and docker access
 ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
@@ -118,16 +124,20 @@ ARG USER_GID
 RUN groupadd --gid $USER_GID $USER_NAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USER_NAME \
     && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER_NAME \
-    && chmod 0440 /etc/sudoers.d/$USER_NAME
-RUN usermod -aG sudo $USER_NAME
+    && chmod 0440 /etc/sudoers.d/$USER_NAME \
+    && groupadd docker \
+    && usermod -aG docker $USER_NAME
 
 
 # ********************************************************
-# * Dev
+# * Development
 # 
 # This layer contains everything needed for a fully 
 # featured development environment.  It is intended to 
-# be used with VSCode devcontainers.
+# be used as a devcontainer via VSCode remote development
+# extension.
+# 
+# See https://code.visualstudio.com/docs/remote/containers
 # ********************************************************
 
 FROM builder as dev
@@ -156,7 +166,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose
 
-# Install Dagger
+# Install Dagger - TODO: pin version
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
 RUN mv ./bin/dagger /usr/local/bin
 
@@ -173,25 +183,29 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     && bash -c 'zsh -is <<<exit &>/dev/null' \
     && $HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
-
 # Install Dev Python packages
+ARG APP_PATH
 WORKDIR $APP_PATH   
 USER root
 COPY ./requirements/dev.txt requirements.txt
 RUN pip-sync requirements.txt && rm requirements.txt
 
+# Create VSCode extension folders to cache
 USER $USER_NAME
+ARG VSCODE_EXT_DIR=/home/$USER_NAME/.vscode-server/extensions
+RUN mkdir -p $VSCODE_EXT_DIR
+VOLUME VSCODE_EXT_DIR
 
 # ********************************************************
-# * Test
+# * Testing
 #
-# This layer copies the source code and installs dependencies
-# required to test the code.  Could be used in a CI/CD 
-# pipeline or similar.
+# This layer copies the source code and installs only 
+# the dependencies necessary to run tests.
 # ********************************************************
 
 FROM builder as test
 
+ARG APP_PATH
 WORKDIR $APP_PATH
 
 # Install Test Python packages
