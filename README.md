@@ -106,3 +106,15 @@ a comprehensive and productive environment to modelling and solving Constraint P
 - [Dagger](https://dagger.io/)
 - [Dagger Docs](https://docs.dagger.io/)
 - [CUE Lang](https://cuelang.org/)
+
+
+## Notes
+
+### Docker
+- `apt-get` and `apt-install` takes forever which is very annoying when playing around with Dockerfiles.  Presumably theres a way to cache it but I can't quite figure it out.
+
+### Devcontainer
+- local variables (eg: {localEnv:USERNAME}) are not passed through properly from WSL2 to the container build
+
+### Dagger
+Does dagger contain its own internal docker engine? 
