@@ -104,7 +104,7 @@ COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # Create a python virtual environment
 ARG APP_PATH
-RUN mkdir $APP_PATH
+RUN mkdir -p $APP_PATH
 WORKDIR $APP_PATH
 
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
