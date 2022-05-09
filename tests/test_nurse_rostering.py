@@ -1,4 +1,4 @@
-from unconstrained import *
+from src import *
 from examples.nurse_rostering import *
 from pytest import mark, fixture, param
 

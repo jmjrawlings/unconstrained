@@ -1,4 +1,4 @@
-from unconstrained import *
+from src import *
 from pytest import mark, fixture
 from minizinc.CLI.driver import CLIDriver
 from minizinc import find_driver
@@ -80,6 +80,22 @@ async def test_solve_unsatisfiable(minizinc_options):
         minizinc_options
         )
     assert result.status == UNSATISFIABLE
+
+
+async def test_recursive_predicate_fails(minizinc_options):
+    result = await solve(
+        """
+        predicate recurse(var int: a) =
+            recurse(a);
+  
+        var 1..10: x;
+        constraint recurse(x);
+        """,
+        minizinc_options
+        )
+    assert result.error
+    assert result.status == ERROR
+
 
 
 def test_available_solvers():

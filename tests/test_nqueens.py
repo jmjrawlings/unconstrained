@@ -1,4 +1,4 @@
-from unconstrained import *
+from src import *
 from examples.n_queens import *
 from pytest import fixture
 
