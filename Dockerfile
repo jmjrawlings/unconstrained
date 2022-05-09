@@ -104,7 +104,7 @@ COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # Create a python virtual environment
 ARG APP_PATH
-RUN mkdir $APP_PATH
+RUN mkdir -p $APP_PATH
 WORKDIR $APP_PATH
 
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
@@ -181,7 +181,8 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -p https://github.com/zsh-users/zsh-completions \
     && echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc \
     && bash -c 'zsh -is <<<exit &>/dev/null' \
-    && $HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
+    && $HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install \
+    && sudo usermod --shell $(which zsh) $USER_NAME 
 
 # Install Dev Python packages
 ARG APP_PATH
@@ -195,6 +196,9 @@ USER $USER_NAME
 ARG VSCODE_EXT_DIR=/home/$USER_NAME/.vscode-server/extensions
 RUN mkdir -p $VSCODE_EXT_DIR
 VOLUME VSCODE_EXT_DIR
+
+# Add local script path to env
+ENV PATH="$APP_PATH/scripts:$PATH"
 
 # ********************************************************
 # * Testing

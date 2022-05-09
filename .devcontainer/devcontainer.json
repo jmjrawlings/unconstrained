@@ -1,10 +1,6 @@
 {
     "name": "unconstrained",
-
-    // Custom project path in container (default is /workspaces/{foldername})
-    "workspaceFolder": "/unconstrained",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/unconstrained,type=bind,consistency=cached",
-            
+                
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
@@ -13,15 +9,15 @@
             "USER_UID": "1000",
             "USER_GID": "1000",        
             "USER_NAME": "harken",
-            "APP_PATH": "/unconstrained"
+            "APP_PATH": "/workspaces/unconstrained"
         }
     },
-            
+                
     "mounts":[
-        // Access hosts docker engine
+        // Mount the host docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // Avoid VSCode extension reinstalls, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
-        // "source=unconstrained-vscode-extensions,target=/home/unco/.vscode-server/extensions,type=volume",
+        // Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
+        "source=unconstrained-vscode-extensions,target=/home/harken/.vscode-server/extensions,type=volume"
     ],
             
     "settings": {
