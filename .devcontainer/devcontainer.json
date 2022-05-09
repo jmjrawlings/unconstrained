@@ -1,10 +1,6 @@
 {
     "name": "unconstrained",
-
-    // Custom project path in container (default is /workspaces/{foldername})
-    "workspaceFolder": "/unconstrained",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/unconstrained,type=bind,consistency=cached",
-            
+                
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
@@ -13,10 +9,10 @@
             "USER_UID": "1000",
             "USER_GID": "1000",        
             "USER_NAME": "harken",
-            "APP_PATH": "/unconstrained"
+            "APP_PATH": "/workspaces/unconstrained"
         }
     },
-            
+                
     "mounts":[
         // Mount the host docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
