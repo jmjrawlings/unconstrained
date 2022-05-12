@@ -467,3 +467,6 @@ def enum_field(cls : Type[E], null : E, **kwargs):
 def enumerate1(x):
     for i,y in enumerate(x):
         yield i+1, y
+
+def range1(x):
+    return range(1, x+1)
