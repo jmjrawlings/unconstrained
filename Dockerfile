@@ -8,11 +8,13 @@ ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG PYTHON_VENV=/opt/venv
+ARG DAGGER_VERSION=0.2.10
 ARG APP_PATH=/app
 ARG USER_NAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
+
 
 # ********************************************************
 # * MiniZinc Builder
@@ -167,6 +169,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && chmod +x /usr/local/bin/docker-compose
 
 # Install Dagger - TODO: pin version
+ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
 RUN mv ./bin/dagger /usr/local/bin
 
