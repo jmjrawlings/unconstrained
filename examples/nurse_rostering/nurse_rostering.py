@@ -1,5 +1,5 @@
 from src import *
-from sqlmodel import Field, SQLModel, create_engine, Relationship, Session
+from sqlmodel import Field, SQLModel, create_engine, Relationship, Session, select
 
 
 def primary_key(**kwargs):
@@ -20,6 +20,12 @@ class Day(SQLModel, table=True):
     shifts : List["Shift"] = backref('day')
     scenario_id : int = foreign_key('scenario.id')
     scenario : "Scenario" = backref('days')
+
+    def __str__(self):
+        return f'Day {self.number}'
+
+    def __repr__(self):
+        return f'<{self!s}>'
 
 
 class Nurse(SQLModel, table=True):
@@ -86,70 +92,156 @@ class Scenario(SQLModel, table=True):
         return f'<{self!s}>'
 
 
-sqlite_name = "nurse_rostering"
-sqlite_url = f"sqlite:///{sqlite_name}.db"
-engine = create_engine(sqlite_url, echo=True)
-SQLModel.metadata.create_all(engine)
+def make_engine(name = None):
+    if not name:
+        url = 'sqlite://'
+    else:
+        url = f"sqlite:///{name}.db"
+    
+    engine = create_engine(url,echo=True)
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
+    return engine
+
+
+engine = make_engine()
+
+
+def make_session():
+    return Session(engine)
 
 
 def create_scenario(
-        engine=engine,
+        session,
         num_days=3,
         num_nurses=4,
         num_shifts=3) -> Scenario:
 
     from itertools import cycle
+    
+    scenario = Scenario()
 
-    with Session(engine) as session:
-        scenario = Scenario()
-
-        for i in range1(num_nurses):
-            nurse = Nurse(scenario=scenario, number=i)
-                        
-        for i in range1(num_days):
-            day = Day(number=i, scenario=scenario)
-            
-            for i in range1(num_shifts):
-                shift = Shift(number=i, day=day, scenario=scenario)
-
-        session.add(scenario)
-        session.commit()
+    for i in range1(num_nurses):
+        nurse = Nurse(scenario=scenario, number=i)
+                    
+    for i in range1(num_days):
+        day = Day(number=i, scenario=scenario)
         
-        # Generate some initial shift requests
-        nurses = cycle(scenario.nurses)
-        for shift in scenario.shifts:
-            nurse = next(nurses)
-            request = Request(nurse=nurse, shift=shift, scenario=scenario)
-            session.add(request)
+        for i in range1(num_shifts):
+            shift = Shift(number=i, day=day, scenario=scenario)
 
-        session.commit()
-        
-        log.info(f'{scenario!r} was created')
+    session.add(scenario)
+    session.commit()
+    
+    # Generate some initial shift requests
+    nurses = cycle(scenario.nurses)
+    for shift in scenario.shifts:
+        nurse = next(nurses)
+        request = Request(nurse=nurse, shift=shift, scenario=scenario)
+        session.add(request)
 
+    session.commit()
+    log.info(f'{scenario!r} was created')
     return scenario
 
 
-async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
-    return
-    yield
+class NurseModel(Nurse, table=False):
+    var : str = ''
 
-async def solve_with_minizinc(scenario : Scenario, options : SolveOptions):
-    model = f"""
-    int: d;
-    int: s;
-    int: n;
 
-    set of int: Day = 1 .. d;
-    set of int: Nurse = 1 .. n;
-    set of int: Shift = 1 .. s;
-
+async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOptions):
+    """
+    Solve the scenario with a generated MiniZinc model.
     """
 
-    return
-    yield
+    nurses = scenario.nurses
+    shifts = scenario.shifts
+    days = scenario.days
+    requests = scenario.requests
+    n,s,d,r = [len(x) for x in [nurses, shifts, days, requests]]
+            
+    model = MiniZincModelBuilder()
+    model.add_section('Nurse Rostering')
+    model.add_multiline_comment(f'''
+    {n} Nurses
+    {s} Shifts
+    {d} Days
+    {r} Requests
+    ''')
+
+    nurse = NurseModel(**nurses[0].dict())
+
+    # for i, nurse in enumerate1(nurses):
+    #     nurse._var = model.add_par(type='int', name=f'N{i}', value=i)
+        
+    # for i, shift in enumerate1(shifts):
+    #     shift._var = model.add_par(type='int', name=f'S{i}', value=i)
+
+    # for i, request in enumerate1(requests):
+    #     request._var = model.add_par(type='int', name=f'R{i}', value=i)
+
+    model_string = model.string
+    async for result in solutions(model_string, options=options):
+        yield result
+        
+
+async def solve_with_minizinc_static(scenario : Scenario, options : SolveOptions):
+    """
+    Solve the scenario with a static MiniZinc model
+    """
+
+    yield Result()
+
+#     model = f"""
+#     include "alldifferent.mzn";
+    
+#     int: d;
+#     int: s;
+#     int: n;
+#     int: r;
+    
+#     set of int: Day = 1 .. d;
+#     set of int: Nurse = 1 .. n;
+#     set of int: Shift = 1 .. s;
+#     set of int: Request = 1 .. r;
+#     set of int: Number = 1 .. 3;
+                                                                
+#     array[Shift] of Number: shift_number;
+#     array[Shift] of Day: shift_day;
+#     array[Day, Number] of Shift: shifts;
+                            
+#     array[Request] of Nurse: request_nurse;
+#     array[Request] of Shift: request_shift;
+
+#     array[Shift] of var Nurse: roster;
+                        
+#     constraint forall (d in Day) (
+#         alldifferent([roster[s] | s in shifts[d, ..]])
+#     );
+    
+    
+#     """
+    
+#     options = SolveOptions()
+    
+#     async for result in solutions(
+#         model,
+#         options,
+#         d = len(scenario.days),
+#         n = len(scenario.nurses),
+#         s = len(scenario.shifts), 
+#         r = len(scenario.requests),
+#         shift_number = [s.number for s in scenario.shifts],
+#         shift_day = [s.day.number for s in scenario.shifts],
+#         shifts = [[s.number for s in d.shifts] for d in scenario.days],
+#         request_nurse = [r.nurse.number for r in scenario.requests],
+#         request_shift = [r.shift.number for r in scenario.requests],
+#         ):
+#         yield result
+    
 
 
-def solve_with_ortools(scenario : Scenario):
+def solve_with_ortools(scenario : Scenario) -> Result:
     from ortools.sat.python import cp_model
     
     # Creates the model.
@@ -158,6 +250,9 @@ def solve_with_ortools(scenario : Scenario):
     # Creates shift variables.
     for s in scenario.shifts:
         var = model.NewBoolVar(f'shift_d{s.day.number}_s{s.number}_n{n.number}')
+
+    return Result()
+    
             
 
     # # Each shift is assigned to exactly one nurse in .

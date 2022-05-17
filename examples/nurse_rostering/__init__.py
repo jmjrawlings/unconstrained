@@ -1,1 +1,1 @@
-from .nurse_rostering import Scenario, create_scenario, solve_with_dynamic_minizinc, plot_scenario
+from .nurse_rostering import Scenario, create_scenario, solve_with_minizinc_dynamic, solve_with_minizinc_static, solve_with_ortools, plot_scenario, make_session

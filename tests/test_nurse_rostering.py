@@ -1,14 +1,12 @@
 from src import *
 from examples.nurse_rostering import *
+from sqlmodel import select
 from pytest import mark, fixture, param
 
-
-@fixture
-def scenario() -> Scenario:
-    return create_scenario()
-       
-
-async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
+async def test_solve_with_dynamic_minizinc(minizinc_options):
     
-    async for result in solve_with_dynamic_minizinc(scenario, minizinc_options):
-        pass
+    with make_session() as session:
+        scenario = create_scenario(session)
+    
+        async for result in solve_with_minizinc_dynamic(scenario, minizinc_options):
+            pass
