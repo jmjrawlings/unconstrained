@@ -54,9 +54,7 @@
         // Misc
         "editor.detectIndentation": false,
         "editor.insertSpaces": true,
-        "telemetry.enableTelemetry": false,
-        "telemetry.telemetryLevel" : 0,
-
+        "telemetry.telemetryLevel" : "off"
     },
 
     "extensions": [
