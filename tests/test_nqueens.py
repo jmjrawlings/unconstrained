@@ -1,21 +1,21 @@
+from examples.n_queens.n_queens import create_scenario
 from src import *
 from examples.n_queens import *
 from pytest import fixture
 
 
 @fixture
-def scenario():
-    return create_scenario(5)
-
-
-@fixture
 def options():
     return SolveOptions()
 
+@fixture
+def session():
+    with make_session(engine) as s:
+        yield s
 
 
-async def test_solve(scenario : Scenario, options, output_dir):
-                
+async def test_solve(session, options, output_dir):
+    scenario = create_scenario(session)
     async for result in solve_scenario(scenario, options, name=scenario.name):
         pass
 

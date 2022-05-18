@@ -3,36 +3,37 @@ import altair as alt
 from altair import Chart
 import pandas as pd
 
+class Queen(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    number : int
+    scenario_id : int = foreign_key("scenario.id")
+    scenario : "Scenario" = backref('queens')
+    row : int
+    col : int
 
-@attr.s(**ATTRS)
-class Queen(HasId):
-    id  : int = int_field()
-    row : int = int_field(comment='Row (filled by solver)')
-    col : int = int_field(comment='Column (filled by solver)')
-    
 
-Queens = map_type(int, Queen)
-
-@attr.s(**ATTRS)
-class Scenario(HasId):
-    id  : str = uuid_field()
-    n   : int = int_field(comment='Size of the Scenario')
-    queens : Queens = map_field(Queens)
-    
-    @property
-    def name(self):
-        return f'{self.n} Queens'
-
+class Scenario(SQLModel, table=True):
+    id : Optional[int] = primary_key()
+    name : str
+    n : int
+    queens : List["Queen"] = backref("scenario")
+        
     def __str__(self):
         return self.name
-    
+
+engine = make_engine()
+
+def make_session(engine=engine):
+    return Session(engine)
 
 
-def create_scenario(n=3) -> Scenario:
-    scenario = Scenario(n=n)
-    for i in range(n):
-        queen = Queen(id=i+1)
-        scenario.queens += queen
+def create_scenario(session : Session, n=3) -> Scenario:
+    scenario = Scenario(n=n, name=f'{n} Queens')
+    session.add(scenario)
+    for i in range1(n):
+        queen = Queen(number=i, row=0, col=0, scenario=scenario)
+        session.add(queen)
+    session.commit()    
     return scenario
 
 

@@ -1,17 +1,4 @@
 from src import *
-from sqlmodel import Field, SQLModel, create_engine, Relationship, Session, select
-
-
-def primary_key(**kwargs):
-    return Field(default=None, primary_key=True, **kwargs)
-
-
-def foreign_key(key, **kwargs):
-    return Field(default=None, foreign_key=key, **kwargs)
-
-
-def backref(name, **kwargs):
-    return Relationship(back_populates=name, **kwargs)
 
 
 class Day(SQLModel, table=True):
@@ -90,18 +77,6 @@ class Scenario(SQLModel, table=True):
 
     def __repr__(self):
         return f'<{self!s}>'
-
-
-def make_engine(name = None):
-    if not name:
-        url = 'sqlite://'
-    else:
-        url = f"sqlite:///{name}.db"
-    
-    engine = create_engine(url,echo=True)
-    SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
-    return engine
 
 
 engine = make_engine()
