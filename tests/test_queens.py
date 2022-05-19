@@ -1,5 +1,5 @@
 from src import *
-from examples.n_queens import *
+from examples.queens import *
 from pytest import fixture
 
 
