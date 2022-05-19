@@ -1,4 +1,3 @@
-from examples.n_queens.n_queens import create_scenario
 from src import *
 from examples.n_queens import *
 from pytest import fixture
@@ -10,16 +9,18 @@ def options():
 
 @fixture
 def session():
-    with make_session(engine) as s:
+    with Session(engine) as s:
         yield s
 
 
 async def test_solve(session, options, output_dir):
-    scenario = create_scenario(session)
+    scenario = create_scenario(session, n=5)
+    
     async for result in solve_scenario(scenario, options, name=scenario.name):
+        session.commit()
         pass
 
-    chart = plot(scenario)
+    chart = plot_scenario(scenario)
     chart = chart.properties(width=400, height=400, title=scenario.name)
     chart.save(output_dir / f'{scenario.name}.html')
         

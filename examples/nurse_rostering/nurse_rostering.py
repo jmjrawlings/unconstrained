@@ -1,37 +1,33 @@
 from src import *
 
 
-class Day(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Paths:
+    """ 
+    Filepaths 
+    """
+        
+    home = Path(__file__).parent
+    input = home / 'input'
+    output = home / 'output'
+    database = output / 'queens.db'
+
+
+class Day(SQLTable, table=True):
     number : int
     shifts : List["Shift"] = backref('day')
     scenario_id : int = foreign_key('scenario.id')
     scenario : "Scenario" = backref('days')
 
-    def __str__(self):
-        return f'Day {self.number}'
 
-    def __repr__(self):
-        return f'<{self!s}>'
-
-
-class Nurse(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Nurse(SQLTable, table=True):
     number : int
     shifts: List["Shift"] = backref('nurse')
     scenario_id : int = foreign_key('scenario.id')
     scenario : "Scenario" = backref('nurses')
     requests : List["Request"] = backref('nurse')
     
-    def __str__(self):
-        return f'Nurse {self.number}'
 
-    def __repr__(self):
-        return f'<{self!s}>'
-
-
-class Shift(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Shift(SQLTable, table=True):
     number : int
     day_id : int = foreign_key('day.id')
     day : "Day" = backref('shifts')
@@ -41,49 +37,24 @@ class Shift(SQLModel, table=True):
     scenario : "Scenario" = backref('shifts')
     requests : List["Request"] = backref('shift')
 
-    def __str__(self):
-        return f'Shift {self.number} on Day {self.day.number}'
 
-    def __repr__(self):
-        return f'<{self!s}>'
-
-
-class Request(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Request(SQLTable, table=True):
     shift_id : int = foreign_key('shift.id')
     shift : Shift = backref('requests')
     nurse_id : int = foreign_key('nurse.id')
     nurse : Nurse = backref('requests')
     scenario_id : int = foreign_key('scenario.id')
     scenario : "Scenario" = backref('requests')
-        
-    def __str__(self):
-        return f'Request'
-
-    def __repr__(self):
-        return f'<{self!s}>'
 
 
-
-class Scenario(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Scenario(SQLTable, table=True):
     days   : List[Day] = backref('scenario')
     shifts : List[Shift] = backref('scenario')
     nurses : List[Nurse] = backref('scenario')
     requests : List[Request] = backref('scenario')
-                
-    def __str__(self):
-        return f'Scenario {self.id}'
-
-    def __repr__(self):
-        return f'<{self!s}>'
 
 
 engine = make_engine()
-
-
-def make_session():
-    return Session(engine)
 
 
 def create_scenario(
@@ -120,10 +91,6 @@ def create_scenario(
     return scenario
 
 
-class NurseModel(Nurse, table=False):
-    var : str = ''
-
-
 async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOptions):
     """
     Solve the scenario with a generated MiniZinc model.
@@ -143,8 +110,6 @@ async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOption
     {d} Days
     {r} Requests
     ''')
-
-    nurse = NurseModel(**nurses[0].dict())
 
     # for i, nurse in enumerate1(nurses):
     #     nurse._var = model.add_par(type='int', name=f'N{i}', value=i)

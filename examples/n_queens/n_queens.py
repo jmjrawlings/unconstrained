@@ -3,8 +3,22 @@ import altair as alt
 from altair import Chart
 import pandas as pd
 
-class Queen(SQLModel, table=True):
-    id : Optional[int] = primary_key()
+class Paths:
+    """ Filepaths """
+    
+    home = Path(__file__).parent
+    input = home / 'input'
+    output = home / 'output'
+    database = output / 'queens.db'
+
+
+class Scenario(SQLTable, table=True):
+    name : str
+    n : int
+    queens : List["Queen"] = backref("scenario")
+
+
+class Queen(SQLTable, table=True):
     number : int
     scenario_id : int = foreign_key("scenario.id")
     scenario : "Scenario" = backref('queens')
@@ -12,19 +26,7 @@ class Queen(SQLModel, table=True):
     col : int
 
 
-class Scenario(SQLModel, table=True):
-    id : Optional[int] = primary_key()
-    name : str
-    n : int
-    queens : List["Queen"] = backref("scenario")
-        
-    def __str__(self):
-        return self.name
-
-engine = make_engine()
-
-def make_session(engine=engine):
-    return Session(engine)
+engine = make_engine(Paths.database)
 
 
 def create_scenario(session : Session, n=3) -> Scenario:
@@ -39,35 +41,44 @@ def create_scenario(session : Session, n=3) -> Scenario:
 
 
 async def solve_scenario(scenario : Scenario, options : SolveOptions, **kwargs):
-
-    model = """
-    int: n;
-    array [1..n] of var 1..n: q; % queen in column i is in row q[i]
-
+    
+    model = f"""
+    % N-Queens satisfaction model
     include "alldifferent.mzn";
+        
+    int: n = {scenario.n};
 
-    constraint alldifferent(q);                       % distinct rows
-    constraint alldifferent([ q[i] + i | i in 1..n]); % distinct diagonals
-    constraint alldifferent([ q[i] - i | i in 1..n]); % upwards+downwards
+    set of int: N = 1 .. n;
 
-    % search
-    solve :: int_search(q, first_fail, indomain_min)
+    % The Queen in column i is in row q[i]
+    array [N] of var N: q; 
+            
+    constraint % Each queen is in a different row
+        alldifferent(q); 
+
+    constraint % Upwards diagonal
+        alldifferent([ q[i] + i | i in N]); 
+
+    constraint % Downwards diagonal
+        alldifferent([ q[i] - i | i in N]); 
+    
+    solve ::
+        int_search(q, first_fail, indomain_min)
         satisfy;
     """
 
-    async for result in solutions(model, options, n=scenario.n, **kwargs):
+    async for result in solutions(model, options, **kwargs):
         array = result['q']
-        q = 0
-        for col, row in enumerate(array):
-            q += 1
-            queen = scenario.queens[q]
-            queen.col = col + 1
+        for i, row in enumerate(array):
+            queen = scenario.queens[i]
+            queen.col = i + 1
             queen.row = row
+            log.info(f'Queen {queen.number} at ({queen.row}, {queen.col})')
 
         yield result
 
 
-def dataset(scenario : Scenario):
+def create_chart_data(scenario : Scenario):
     records = []
     for queen in scenario.queens:
         records.append(dict(
@@ -80,8 +91,8 @@ def dataset(scenario : Scenario):
     return df
 
 
-def plot(scenario : Scenario) -> Chart:
-    data = dataset(scenario)
+def plot_scenario(scenario : Scenario) -> Chart:
+    data = create_chart_data(scenario)
     base = (alt
         .Chart(data)
         .encode(x=alt.X('col:O'))
