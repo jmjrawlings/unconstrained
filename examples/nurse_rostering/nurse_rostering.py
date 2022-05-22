@@ -1,4 +1,5 @@
 from src import *
+from sqlmodel import SQLModel
 
 
 class Paths:
@@ -9,17 +10,33 @@ class Paths:
     home = Path(__file__).parent
     input = home / 'input'
     output = home / 'output'
-    database = output / 'queens.db'
+    database = output / 'nurse_rostering.db'
 
 
-class Day(SQLTable, table=True):
+class Model(SQLModel):
+    """
+    Convenience class so we don't 
+    have to define the primary key over
+    and over        
+    """
+    id : Optional[int] = primary_key()
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id) 
+
+class Day(Model, table=True):
     number : int
     shifts : List["Shift"] = backref('day')
     scenario_id : int = foreign_key('scenario.id')
     scenario : "Scenario" = backref('days')
 
 
-class Nurse(SQLTable, table=True):
+class Nurse(Model, table=True):
     number : int
     shifts: List["Shift"] = backref('nurse')
     scenario_id : int = foreign_key('scenario.id')
@@ -27,7 +44,7 @@ class Nurse(SQLTable, table=True):
     requests : List["Request"] = backref('nurse')
     
 
-class Shift(SQLTable, table=True):
+class Shift(Model, table=True):
     number : int
     day_id : int = foreign_key('day.id')
     day : "Day" = backref('shifts')
@@ -38,7 +55,7 @@ class Shift(SQLTable, table=True):
     requests : List["Request"] = backref('shift')
 
 
-class Request(SQLTable, table=True):
+class Request(Model, table=True):
     shift_id : int = foreign_key('shift.id')
     shift : Shift = backref('requests')
     nurse_id : int = foreign_key('nurse.id')
@@ -47,14 +64,14 @@ class Request(SQLTable, table=True):
     scenario : "Scenario" = backref('requests')
 
 
-class Scenario(SQLTable, table=True):
+class Scenario(Model, table=True):
     days   : List[Day] = backref('scenario')
     shifts : List[Shift] = backref('scenario')
     nurses : List[Nurse] = backref('scenario')
     requests : List[Request] = backref('scenario')
 
 
-engine = make_engine()
+engine = make_engine(path=Paths.database, model=Model)
 
 
 def create_scenario(

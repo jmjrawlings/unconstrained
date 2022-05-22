@@ -138,4 +138,4 @@ The set of tools and packages I'm currently using to model and solve problems.  
 - local variables (eg: {localEnv:USERNAME}) are not passed through properly from WSL2 to the container build
 
 ### Dagger
-Does dagger contain its own internal docker engine? 
+- Does dagger contain its own internal docker engine? 

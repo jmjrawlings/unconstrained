@@ -7,6 +7,7 @@ from pytest import fixture
 def options():
     return SolveOptions()
 
+
 @fixture
 def session():
     with Session(engine) as s:

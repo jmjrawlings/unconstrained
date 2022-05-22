@@ -3,6 +3,7 @@ import altair as alt
 from altair import Chart
 import pandas as pd
 
+
 class Paths:
     """ Filepaths """
     
@@ -12,13 +13,32 @@ class Paths:
     database = output / 'queens.db'
 
 
-class Scenario(SQLTable, table=True):
+class Model(SQLModel):
+    metadata = MetaData()
+    
+    """
+    Convenience class so we don't 
+    have to define the primary key over
+    and over        
+    """
+    id : Optional[int] = primary_key()
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)    
+
+
+class Scenario(Model, table=True):
     name : str
     n : int
     queens : List["Queen"] = backref("scenario")
 
 
-class Queen(SQLTable, table=True):
+class Queen(Model, table=True):
     number : int
     scenario_id : int = foreign_key("scenario.id")
     scenario : "Scenario" = backref('queens')
@@ -26,7 +46,7 @@ class Queen(SQLTable, table=True):
     col : int
 
 
-engine = make_engine(Paths.database)
+engine = make_engine(path=Paths.database, model=Model)
 
 
 def create_scenario(session : Session, n=3) -> Scenario:

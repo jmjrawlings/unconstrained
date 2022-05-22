@@ -1,127 +1,79 @@
 from src import *
 from altair import Chart
 
-input_dir  : Path  = to_existing_filepath(__file__).parent / 'input'
-output_dir : Path = to_existing_filepath(__file__).parent / 'output'
 
-
-@attr.s(**ATTRS)
-class Skill(HasId):
-    skill_id : int = int_field()
-    name     : str = string_field()
-                    
-    def get_id(self):
-        return self.skill_id
-
-Skills = map_type(int, Skill)
-
-
-@attr.s(**ATTRS)
-class Contributor(HasId):
-    cont_id : int = int_field()
-    name : str = string_field()
-    competencies : Dict[int, int] = dict_field()
-
-    """
-    References
-    """
-    roles : "Roles" = None       # type:ignore
-    projects : "Projects" = None # type:ignore
+class Paths:
+    """ Filepaths """
     
-        
-    def get_id(self):
-        return self.cont_id
+    home = Path(__file__).parent
+    input = home / 'input'
+    output = home / 'output'
+    database = output / 'project_planning.db'
 
 
-Contributors = map_type(int, Contributor)
+class Model(SQLModel):
+    metadata = MetaData()
+    """
+    Convenience class so we don't 
+    have to define the primary key over
+    and over        
+    """
+    id : Optional[int] = primary_key()
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id) 
 
 
-@attr.s(**ATTRS)
-class Role(HasId):
+class Skill(Model, table=True):
+    name : str
+
+
+class Contributor(Model, table=True):
+    name : str
+
+
+class Role(Model, Table=True):
     """
     Input
     """
-    role_id  : int = int_field()
-    proj_id  : int = int_field()
-    skill_id : int = int_field()
-    level    : int = int_field()
-    
+    proj_id  : int = foreign_key('project.id')
+    skill_id : int = foreign_key('skill.id')
+    level    : int
+   
     """
     Solution
     """
-    cont_id   : int = int_field()
-    mentor_id : int = int_field()
-    start     : int = int_field()
-    end       : int = int_field()
-    days      : int = int_field()
-
-    """
-    References
-    """
-    project : "Project" = None # type:ignore
-    skill   : Skill = None # type:ignore
-    staff   : Optional[Contributor] = None
-    mentor  : Optional[Contributor] = None
-                    
-    def get_id(self):
-        return self.role_id
+    cont_id   : Optional[int]
+    mentor_id : Optional[int]
+    start     : Optional[int]
+    end       : Optional[int]
+    days      : Optional[int]
 
 
-Roles = map_type(int, Role)
-    
-
-@attr.s
-class Project(HasId):
-    """
-    Input
-    """
-    proj_id     : int   = int_field()
-    name        : str   = string_field()
-    days        : int   = int_field()
-    best_score  : int   = int_field()
-    end_before  : int   = int_field()
-    start_before: int   = int_field()
-    roles       : Roles = map_field(Roles)
-    
-    """
-    Solution
-    """
-    start : int = int_field()
-    end   : int = int_field()
-    score : int = int_field()
-    late  : int = int_field()
-
-    """
-    References
-    """
-    staff : Contributors = None # type:ignore
-        
-    
-    def get_id(self):
-        return self.proj_id
+class Project(Model, table=True):
+    name        : str
+    days        : int
+    best_score  : int
+    end_before  : int
+    start_before: int
+    roles       : List[Role]
+    start : Optional[int]
+    end   : Optional[int]
+    score : Optional[int]
+    late  : Optional[int]
 
 
-Projects = map_type(int, Project)
-
-
-@attr.s(**ATTRS)
-class Scenario(HasId):
-    scen_id  : str      = string_field()
-    name     : str      = string_field()
-    skills   : Skills   = map_field(Skills)
-    projects : Projects = map_field(Projects)
-    roles    : Roles    = map_field(Roles)
-    contributors : Contributors = map_field(Contributors)
-
-    def get_id(self):
-        return self.scen_id    
-
-    def __str__(self):
-        return f'{self.name} - {self.projects.count} projects and {self.contributors.count} contributors'
-
-    def __repr__(self):
-        return f'<{self!s}>'
-
+class Scenario(Model, table=True):
+    name     : str
+    skills   : List[Skill]
+    projects : List[Project]
+    roles    : List[Role]
+    contributors : List[Contributor]
 
 
 def load_scenario(path) -> Scenario:

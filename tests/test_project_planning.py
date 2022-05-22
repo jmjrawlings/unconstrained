@@ -20,7 +20,7 @@ def filename(request):
 @fixture
 def filepath(filename):
     filename = f'{filename}.in.txt'
-    filepath = input_dir / filename
+    filepath = Paths.input / filename
     return filepath
 
 
@@ -39,7 +39,7 @@ async def test_solve_with_static_minizinc(scenario, minizinc_options):
     async for result in solve_with_static_minizinc(scenario, minizinc_options):
         pass
 
-    chart = plot_scenario(scenario, path=output_dir / f'{scenario.name}.vg.html')
+    chart = plot_scenario(scenario, path=Paths.output / f'{scenario.name}.vg.html')
     assert result.status.has_solution
         
 
@@ -48,7 +48,7 @@ async def test_solve_with_dynamic_minizinc(scenario, minizinc_options):
     async for result in solve_with_dynamic_minizinc(scenario, minizinc_options):
         pass
 
-    chart = plot_scenario(scenario, path = output_dir / f'{scenario.name}.vg.html')
+    chart = plot_scenario(scenario, path = Paths.output / f'{scenario.name}.vg.html')
     assert result.status.has_solution
 
 
