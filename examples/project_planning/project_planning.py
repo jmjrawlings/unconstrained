@@ -37,17 +37,15 @@ class Contributor(Model, table=True):
 
 
 class Role(Model, Table=True):
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('roles')
-    proj_id  : int = foreign_key('project.id')
-    project : "Project" = backref('roles')
+    project_id  : int = foreign_key('project.id')
     skill_id : int = foreign_key('skill.id')
     level    : int
-    cont_id   : Optional[int] = foreign_key('contributor.id', default=None)
+    contributor_id   : Optional[int] = foreign_key('contributor.id', default=None)
     mentor_id : Optional[int] = foreign_key('contributor.id', default=None)
     start     : Optional[int] = Field(default=None)
     end       : Optional[int] = Field(default=None)
     days      : Optional[int] = Field(default=None)
+    project : "Project" = backref('roles')
 
 
 class Project(Model, table=True):
@@ -59,8 +57,6 @@ class Project(Model, table=True):
     end_before  : int
     start_before: int
     roles       : List[Role] = backref('project')
-    
-    scenario : "Scenario" = backref('projects')
     start : Optional[int] = Field(default=None)
     end   : Optional[int] = Field(default=None)
     score : Optional[int] = Field(default=None)
@@ -68,12 +64,10 @@ class Project(Model, table=True):
 
 
 class Scenario(Model, table=True):
-    name     : str
-    roles : List[Role] = backref("scenario")
-    skills   : List[Skill] = backref('scenario')
+    name : str
+    skills : List[Skill] = backref('scenario')
     projects : List[Project] = backref('scenario')
     contributors : List[Contributor] = backref('scenario')
-
     
 
 def create_scenario(path : Path) -> Scenario:
@@ -481,10 +475,10 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
 
                 role.start     = project.start
                 role.end       = project.end
-                role.cont_id   = result['role_contributor',i]
+                role.contributor_id   = result['role_contributor',i]
                 role.mentor_id = result['role_mentor',i] or 0
                 role.mentor    = scenario.contributors.try_get(role.mentor_id)
-                role.staff     = scenario.contributors[role.cont_id]
+                role.staff     = scenario.contributors[role.contributor_id]
                 
                 role.staff.roles += role
                 role.staff.projects += project
@@ -696,10 +690,10 @@ solve maximize sum(project_score);
 
                 role.start     = project.start
                 role.end       = project.end
-                role.cont_id   = result['role_contributor',i]
+                role.contributor_id   = result['role_contributor',i]
                 role.mentor_id = result['role_mentor',i] or 0
                 role.mentor    = scenario.contributors.try_get(role.mentor_id)
-                role.staff     = scenario.contributors[role.cont_id]
+                role.staff     = scenario.contributors[role.contributor_id]
                 
                 role.staff.roles += role
                 role.staff.projects += project
@@ -772,7 +766,7 @@ def get_records(scenario : Scenario):
     for project in scenario.projects:
         for role in project.roles:
             skill = scenario.skills[role.skill_id]
-            staff = scenario.contributors.try_get(role.cont_id)
+            staff = scenario.contributors.try_get(role.contributor_id)
             
             record = dict(
                 project = project.name,
