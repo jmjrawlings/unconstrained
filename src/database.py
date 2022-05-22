@@ -12,8 +12,10 @@ def foreign_key(key, **kwargs):
 
 
 def backref(name, **kwargs):
-    return Relationship(back_populates=name, **kwargs)
-
+    return Relationship(
+        back_populates=name, 
+        sa_relationship_kwargs=dict(lazy='joined'),
+        **kwargs)
 
 
 def make_engine(path = None, echo=True, model=SQLModel):

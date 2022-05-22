@@ -49,15 +49,12 @@ class Queen(Model, table=True):
 engine = make_engine(path=Paths.database, model=Model)
 
 
-def create_scenario(session : Session, n=3) -> Scenario:
+def create_scenario(n=3) -> Scenario:
     scenario = Scenario(n=n, name=f'{n} Queens')
-    session.add(scenario)
     for i in range1(n):
         queen = Queen(number=i, row=0, col=0, scenario=scenario)
-        session.add(queen)
-    session.commit()    
+        scenario.queens.append(queen)
     return scenario
-
 
 
 async def solve_scenario(scenario : Scenario, options : SolveOptions, **kwargs):
@@ -103,9 +100,11 @@ def create_chart_data(scenario : Scenario):
     for queen in scenario.queens:
         records.append(dict(
             n = scenario.n,
-            queen = queen.id,
-            row = queen.row,
-            col = queen.col
+            queen = queen.number,
+            y = queen.row,
+            y2 = queen.row + 1,
+            x = queen.col,
+            x2 = queen.col + 1
         ))
     df = pd.DataFrame.from_records(records)
     return df
@@ -115,11 +114,13 @@ def plot_scenario(scenario : Scenario) -> Chart:
     data = create_chart_data(scenario)
     base = (alt
         .Chart(data)
-        .encode(x=alt.X('col:O'))
-        .encode(y=alt.Y('row:O'))
+        .encode(x=alt.X('x:O', axis=alt.Axis(grid=True, labels=False)))
+        .encode(y=alt.Y('y:O', axis=alt.Axis(grid=True, labels=False)))
+        .encode(x2=alt.X2('x2:O'))
+        .encode(y2=alt.Y2('y2:O'))
     )
-
-    rects = base.mark_rect(color='black').encode()
+    
+    rects = base.mark_rect(color='black')
     texts = base.mark_text(color='white', size=14).encode(text='queen:N')
     chart = rects + texts
     return chart

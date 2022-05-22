@@ -8,21 +8,22 @@ def options():
     return SolveOptions()
 
 
-@fixture
-def session():
-    with Session(engine) as s:
-        yield s
+async def test_solve(options):
 
-
-async def test_solve(session, options, output_dir):
-    scenario = create_scenario(session, n=5)
-    
-    async for result in solve_scenario(scenario, options, name=scenario.name):
+    with Session(engine) as session:
+        scenario = create_scenario(n=5)
+        session.add(scenario)
         session.commit()
-        pass
+        session.refresh(scenario)
+                 
+        async for result in solve_scenario(scenario, options, name=scenario.name):
+            session.commit()
+            pass
+
+        session.refresh(scenario)
 
     chart = plot_scenario(scenario)
     chart = chart.properties(width=400, height=400, title=scenario.name)
-    chart.save(output_dir / f'{scenario.name}.html')
-        
+    chart.save(Paths.output / f'{scenario.name}.html')
+            
     assert result.status == ALL_SOLUTIONS

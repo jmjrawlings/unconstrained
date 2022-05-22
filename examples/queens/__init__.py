@@ -1,4 +1,5 @@
 from .queens import (
+    Paths,
     Scenario,
     Queen,
     solve_scenario,
