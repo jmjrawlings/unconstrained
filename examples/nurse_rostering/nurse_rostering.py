@@ -14,11 +14,7 @@ class Paths:
 
 
 class Model(SQLModel):
-    """
-    Convenience class so we don't 
-    have to define the primary key over
-    and over        
-    """
+    metadata = MetaData()
     id : Optional[int] = primary_key()
 
     def __eq__(self, other):
@@ -28,6 +24,7 @@ class Model(SQLModel):
 
     def __hash__(self):
         return hash(self.id) 
+
 
 class Day(Model, table=True):
     number : int

@@ -15,12 +15,6 @@ class Paths:
 
 class Model(SQLModel):
     metadata = MetaData()
-    
-    """
-    Convenience class so we don't 
-    have to define the primary key over
-    and over        
-    """
     id : Optional[int] = primary_key()
 
     def __eq__(self, other):
