@@ -26,7 +26,7 @@ def filepath(filename):
 
 @fixture
 def scenario(filepath) -> Scenario:
-    return load_scenario(filepath)
+    return create_scenario(filepath)
     
         
 @fixture

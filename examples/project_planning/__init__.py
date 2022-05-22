@@ -4,7 +4,7 @@ from .project_planning import (
     Role,
     Skill,
     Project,
-    load_scenario,
+    create_scenario,
     Paths,
     plot_scenario,
     solve_with_dynamic_minizinc,

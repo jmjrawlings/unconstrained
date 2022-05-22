@@ -26,53 +26,58 @@ class Model(SQLModel):
 
 class Skill(Model, table=True):
     name : str
-
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('skills')
+        
 
 class Contributor(Model, table=True):
     name : str
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('contributors')
 
 
 class Role(Model, Table=True):
-    """
-    Input
-    """
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('roles')
     proj_id  : int = foreign_key('project.id')
+    project : "Project" = backref('roles')
     skill_id : int = foreign_key('skill.id')
     level    : int
-   
-    """
-    Solution
-    """
-    cont_id   : Optional[int]
-    mentor_id : Optional[int]
-    start     : Optional[int]
-    end       : Optional[int]
-    days      : Optional[int]
+    cont_id   : Optional[int] = foreign_key('contributor.id', default=None)
+    mentor_id : Optional[int] = foreign_key('contributor.id', default=None)
+    start     : Optional[int] = Field(default=None)
+    end       : Optional[int] = Field(default=None)
+    days      : Optional[int] = Field(default=None)
 
 
 class Project(Model, table=True):
+    scenario_id : int = foreign_key('scenario.id')
+    scenario : "Scenario" = backref('projects')
     name        : str
     days        : int
     best_score  : int
     end_before  : int
     start_before: int
-    roles       : List[Role]
-    start : Optional[int]
-    end   : Optional[int]
-    score : Optional[int]
-    late  : Optional[int]
+    roles       : List[Role] = backref('project')
+    
+    scenario : "Scenario" = backref('projects')
+    start : Optional[int] = Field(default=None)
+    end   : Optional[int] = Field(default=None)
+    score : Optional[int] = Field(default=None)
+    late  : Optional[int] = Field(default=None)
 
 
 class Scenario(Model, table=True):
     name     : str
-    skills   : List[Skill]
-    projects : List[Project]
-    roles    : List[Role]
-    contributors : List[Contributor]
+    roles : List[Role] = backref("scenario")
+    skills   : List[Skill] = backref('scenario')
+    projects : List[Project] = backref('scenario')
+    contributors : List[Contributor] = backref('scenario')
 
+    
 
-def load_scenario(path) -> Scenario:
-
+def create_scenario(path : Path) -> Scenario:
+        
     path = to_existing_filepath(path)
     
     with path.open('r') as src:
@@ -86,7 +91,6 @@ def load_scenario(path) -> Scenario:
         name = scen_id.replace('_', ' ').title()
         
         scenario = Scenario(
-            scen_id = scen_id,
             name = name,
         )
         

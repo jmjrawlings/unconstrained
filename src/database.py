@@ -8,7 +8,7 @@ def primary_key(**kwargs):
 
 
 def foreign_key(key, **kwargs):
-    return Field(default=None, foreign_key=key, **kwargs)
+    return Field(foreign_key=key, **kwargs)
 
 
 def backref(name, **kwargs):
