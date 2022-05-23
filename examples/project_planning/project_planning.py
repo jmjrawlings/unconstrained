@@ -1,5 +1,7 @@
-from src import *
-from altair import Chart
+from src.prelude import *
+from src.minizinc import *
+from src.database import *
+from src.charting import *
 
 
 class Paths:
@@ -23,51 +25,75 @@ class Model(SQLModel):
     def __hash__(self):
         return hash(self.id) 
 
+    def __str__(self):
+        return self.__tablename__
+
+    def __repr__(self):
+        return f'<{self!s}>'
+
+
+class Scenario(Model, table=True):
+    name : str = Field()
+    skills : List["Skill"] = backref('scenario')
+    projects : List["Project"] = backref('scenario')
+    contributors : List["Contributor"] = backref('scenario')
+
 
 class Skill(Model, table=True):
-    name : str
-    scenario_id : int = foreign_key('scenario.id')
+    name : str = Field()
+    scenario_id : int = foreign_key(Scenario.id)
     scenario : "Scenario" = backref('skills')
-        
+
+    competencies : List["Competency"] = backref('skill')
+    roles : List["Role"] = backref('skill')
+            
 
 class Contributor(Model, table=True):
-    name : str
-    scenario_id : int = foreign_key('scenario.id')
+    name : str = Field()
+    scenario_id : int = foreign_key(Scenario.id)
     scenario : "Scenario" = backref('contributors')
 
+    competencies : List["Competency"] = backref('contributor')
 
-class Role(Model, Table=True):
-    project_id  : int = foreign_key('project.id')
-    skill_id : int = foreign_key('skill.id')
-    level    : int
-    contributor_id   : Optional[int] = foreign_key('contributor.id', default=None)
-    mentor_id : Optional[int] = foreign_key('contributor.id', default=None)
-    start     : Optional[int] = Field(default=None)
-    end       : Optional[int] = Field(default=None)
-    days      : Optional[int] = Field(default=None)
-    project : "Project" = backref('roles')
 
+class Competency(Model, table=True):
+    skill_id : int = foreign_key(Skill.id)
+    contributor_id : int = foreign_key(Contributor.id)
+    level : int = Field()
+
+    skill : Skill = backref(Skill.competencies)
+    contributor : Contributor = backref(Contributor.competencies)
+
+
+class Role(Model, table=True):
+    skill_id : int = foreign_key(Skill.id, default=None)
+    project_id : int = foreign_key('project.id', default=None)
+    contributor_id : Optional[int] = foreign_key(Contributor.id, default=None)
+    mentor_id : Optional[int] = foreign_key(Contributor.id, default=None)
+    level : int = Field()
+    start : Optional[int] = Field(default=None)
+    end : Optional[int] = Field(default=None)
+    days : Optional[int] = Field(default=None)
+
+    skill : Skill = backref('roles')
+    project : "Project" = backref("roles")
+       
 
 class Project(Model, table=True):
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('projects')
-    name        : str
-    days        : int
-    best_score  : int
-    end_before  : int
-    start_before: int
-    roles       : List[Role] = backref('project')
+    scenario_id : int     = foreign_key(Scenario.id)
+    name        : str     = Field()
+    days        : int     = Field()
+    best_score  : int     = Field()
+    end_before  : int     = Field()
+    start_before: int     = Field()
     start : Optional[int] = Field(default=None)
     end   : Optional[int] = Field(default=None)
     score : Optional[int] = Field(default=None)
     late  : Optional[int] = Field(default=None)
 
+    scenario : "Scenario" = backref(Scenario.projects)
+    roles : List[Role] = backref('project')
 
-class Scenario(Model, table=True):
-    name : str
-    skills : List[Skill] = backref('scenario')
-    projects : List[Project] = backref('scenario')
-    contributors : List[Contributor] = backref('scenario')
     
 
 def create_scenario(path : Path) -> Scenario:
@@ -93,11 +119,9 @@ def create_scenario(path : Path) -> Scenario:
         for _ in range(n_cont):
             name, n_skill = line_tokens()
 
-            cont = Contributor(
-                cont_id = scenario.contributors.count + 1,
+            contributor = Contributor(
                 name = name
             )
-            scenario.contributors += cont
             comp_id=0
                                                 
             for _ in range(int(n_skill)):
@@ -108,14 +132,13 @@ def create_scenario(path : Path) -> Scenario:
                 
                 if not skill:
                     skill = Skill(
-                        skill_id = len(skill_names) + 1,
                         name = skill_name
                         )
-                    scenario.skills += skill
+                    scenario.skills.append(skill)
                     skill_names[skill_name] = skill
 
-                cont.competencies[skill.skill_id] = int(level)
-                
+                competency = Competency(contributor=contributor, skill=skill, level=int(level))
+                contributor.competencies.append(competency)
 
         for _ in range(n_proj):
             line = line_tokens()
@@ -126,29 +149,22 @@ def create_scenario(path : Path) -> Scenario:
             n_roles = int(n_roles)
                                                             
             project = Project(
-                proj_id = scenario.projects.count + 1,
+                scenario=scenario,
                 name = name,
                 days = days,
                 best_score = best_score,
                 start_before = best_before - days,
                 end_before = best_before,
             )
-            
+                        
             for _ in range(int(n_roles)):
                 skill_name, level = line_tokens()
                 skill = skill_names[skill_name]
                 role = Role(
-                    role_id = scenario.roles.count + 1,
-                    proj_id = project.proj_id,
-                    skill_id = skill.skill_id,
-                    level = level
+                    project=project,
+                    skill=skill,
+                    level = int(level)
                 )
-                role.skill = skill
-                role.project = project
-                project.roles += role
-                scenario.roles += role
-
-            scenario.projects += project                
 
     log.info(f'loaded "{scenario!r}" from "{path.name}"')
     return scenario
@@ -157,9 +173,9 @@ def create_scenario(path : Path) -> Scenario:
 
 
 async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOptions):
-                                        
-    max_score = scenario.projects.map('best_score', int).max()
-    max_day = scenario.projects.map('days', int).sum() + 1
+                                                
+    max_score = max(p.best_score for p in scenario.projects)
+    max_day = sum(p.days for p in scenario.projects) + 1
                                                                     
     model = MiniZincModelBuilder()
     
@@ -189,7 +205,7 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
     model.add_set(
         name = 'SKILL',
         type = 'int',
-        max  = scenario.skills.count        
+        max  = len(scenario.skills)
     )
                     
     model.add_set(
@@ -202,19 +218,19 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
     model.add_set(
         name = 'PROJECT',
         type = 'int',
-        max  = scenario.projects.count,
+        max  = len(scenario.projects),
     )
             
     model.add_set(
         name = 'CONTRIBUTOR',
         type = 'int',
-        max  = scenario.contributors.count
+        max  = len(scenario.contributors)
     )
 
     model.add_set(
         name = 'ROLE',
         type = 'int',
-        max  = scenario.roles.count
+        max  = len([1 for p in scenario.projects for r in p.roles])
     )
 
     model.add_section('Projects')
@@ -291,14 +307,14 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
         name  = 'role_project',
         index = 'ROLE',
         type  = 'PROJECT',
-        value = [r.proj_id for r in scenario.roles]
+        value = [r.project.id for p in scenario.projects for r in p.roles]
     )
         
     model.add_array(
         name  = 'role_skill',
         index = 'ROLE',
         type  = 'SKILL',
-        value = [r.skill_id for r in scenario.roles],
+        value = [r.skill_id for p in scenario.projects for r in p.roles],
         comment = 'Skill required for each role'
     )
 
@@ -306,7 +322,7 @@ async def solve_with_dynamic_minizinc(scenario : Scenario, options : SolveOption
         name  = 'role_level',
         index = 'ROLE',
         type  = 'LEVEL',
-        value = [r.level for r in scenario.roles],
+        value = [r.level for p in scenario.projects for r in p.roles],
         comment = 'Minimum level required for each role'
     )
                         
@@ -707,6 +723,8 @@ from ortools.sat.python import cp_model
 
 
 def solve_with_ortools(scenario : Scenario):
+    yield True
+    return
             
     model = cp_model.CpModel()
     solver = cp_model.CpSolver()

@@ -1,17 +1,41 @@
 from .prelude import *
 from typing import Optional
 from sqlmodel import Field, Relationship, create_engine, SQLModel, Session, MetaData
+from sqlalchemy.orm import InstrumentedAttribute
    
 
 def primary_key(**kwargs):
+    """
+    Create a primary key field
+    """
     return Field(default=None, primary_key=True, **kwargs)
 
 
 def foreign_key(key, **kwargs):
-    return Field(foreign_key=key, **kwargs)
+    """
+    Create a foreign key field
+    """
+    if isinstance(key, str):
+        name = key
+    elif isinstance(key, InstrumentedAttribute):
+        name = str(key).lower()
+    else:
+        raise ValueError(f'Could not get a foreign key from arg {key} of type {type(key)}')
+
+    return Field(foreign_key=name, **kwargs)
 
 
-def backref(name, **kwargs):
+def backref(key, **kwargs):
+    """
+    Create a Relationship field back populated by the key
+    """
+    if isinstance(key, str):
+        name = key
+    elif isinstance(key, InstrumentedAttribute):
+        name = str(key).lower().split(".")[1]
+    else:
+        raise ValueError(f'Could not get a back reference key from arg {key} of type {type(key)}')
+
     return Relationship(
         back_populates=name, 
         sa_relationship_kwargs=dict(lazy='joined'),
