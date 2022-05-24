@@ -1,8 +1,12 @@
-from .prelude import *
+from src.prelude import *
 from typing import Optional
 from sqlmodel import Field, Relationship, create_engine, SQLModel, Session, MetaData
 from sqlalchemy.orm import InstrumentedAttribute
-   
+
+
+def column(*args, **kwargs):
+    return Field(*args, **kwargs)
+
 
 def primary_key(**kwargs):
     """
@@ -52,3 +56,15 @@ def make_engine(path = None, echo=True, model=SQLModel):
     engine = create_engine(url,echo=echo)
     model.metadata.create_all(engine)
     return engine
+
+
+class Model(SQLModel):
+    id : Optional[int] = primary_key()
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)    

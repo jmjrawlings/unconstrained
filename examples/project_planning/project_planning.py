@@ -1,8 +1,4 @@
-from src.prelude import *
-from src.minizinc import *
-from src.database import *
-from src.charting import *
-
+from src import *
 
 class Paths:
     """ Filepaths """
@@ -13,30 +9,17 @@ class Paths:
     database = output / 'project_planning.db'
 
 
-class Model(SQLModel):
-    metadata = MetaData()
-    id : Optional[int] = primary_key()
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            return False
-        return self.id == other.id
-
-    def __hash__(self):
-        return hash(self.id) 
-
-    def __str__(self):
-        return self.__tablename__
-
-    def __repr__(self):
-        return f'<{self!s}>'
+class Model(db.Model):
+    metadata = db.MetaData()
 
 
 class Scenario(Model, table=True):
-    name : str = Field()
-    skills : List["Skill"] = backref('scenario')
-    projects : List["Project"] = backref('scenario')
-    contributors : List["Contributor"] = backref('scenario')
+    name : str = db.column()
+
+    # Relationships
+    skills : List["Skill"] = db.backref('scenario')
+    projects : List["Project"] = db.backref('scenario')
+    contributors : List["Contributor"] = db.backref('scenario')
 
 
 class Skill(Model, table=True):

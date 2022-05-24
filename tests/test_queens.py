@@ -1,29 +1,34 @@
 from src import *
-from examples.queens import *
+from examples import queens
 from pytest import fixture
-
 
 @fixture
 def options():
-    return SolveOptions()
+    return mz.SolveOptions()
 
 
 async def test_solve(options):
 
-    with Session(engine) as session:
-        scenario = create_scenario(n=5)
+    result = mz.Result()
+        
+    with db.Session(queens.engine) as session:
+        scenario = queens.create_scenario(n=5)
         session.add(scenario)
         session.commit()
         session.refresh(scenario)
                  
-        async for result in solve_scenario(scenario, options, name=scenario.name):
+        async for result in queens.solve(scenario, options, name=scenario.name):
             session.commit()
-            pass
 
         session.refresh(scenario)
 
-    chart = plot_scenario(scenario)
-    chart = chart.properties(width=400, height=400, title=scenario.name)
-    chart.save(Paths.output / f'{scenario.name}.html')
-            
-    assert result.status == ALL_SOLUTIONS
+    chart = queens.plot(scenario)
+    
+    charting.save(
+        chart, 
+        path=queens.OUTPUT / f'{scenario.name}.html',
+        width=400,
+        height=400,
+        title=scenario.name
+        )
+    assert result.status == mz.ALL_SOLUTIONS
