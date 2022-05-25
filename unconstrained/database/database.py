@@ -1,5 +1,4 @@
-from src.prelude import *
-from typing import Optional
+from ..prelude import *
 from sqlmodel import Field, Relationship, create_engine, SQLModel, Session, MetaData
 from sqlalchemy.orm import InstrumentedAttribute
 

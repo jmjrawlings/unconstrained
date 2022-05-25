@@ -1,29 +1,13 @@
-from src import *
-from sqlmodel import SQLModel
+from unconstrained import *
+
+home = Path(__file__).parent
+input = home / 'input'
+output = home / 'output'
+database = output / 'nurse_rostering.db'
 
 
-class Paths:
-    """ 
-    Filepaths 
-    """
-        
-    home = Path(__file__).parent
-    input = home / 'input'
-    output = home / 'output'
-    database = output / 'nurse_rostering.db'
-
-
-class Model(SQLModel):
-    metadata = MetaData()
-    id : Optional[int] = primary_key()
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            return False
-        return self.id == other.id
-
-    def __hash__(self):
-        return hash(self.id) 
+class Model(db.Model):
+    metadata = db.MetaData()
 
 
 class Day(Model, table=True):

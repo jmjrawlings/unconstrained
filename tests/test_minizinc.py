@@ -1,7 +1,7 @@
-from src import *
+from unconstrained.prelude import *
+from unconstrained.minizinc import *
 from pytest import mark, fixture
 from minizinc.CLI.driver import CLIDriver
-from minizinc import find_driver
 
 
 @fixture

@@ -1,4 +1,4 @@
-from src import *
+from unconstrained import *
 
 NAME = 'Queens'
 HOME = Path(__file__).parent.parent

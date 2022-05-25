@@ -1,4 +1,4 @@
-from src.charting import *
+from unconstrained.charting import *
 from ..model import *
 
 def create_chart_data(scenario : Scenario):

@@ -1,4 +1,4 @@
-from src import *
+from unconstrained import *
 from examples import queens
 from pytest import fixture
 
@@ -24,7 +24,7 @@ async def test_solve(options):
 
     chart = queens.plot(scenario)
     
-    charting.save(
+    ch.save(
         chart, 
         path=queens.OUTPUT / f'{scenario.name}.html',
         width=400,

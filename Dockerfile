@@ -130,6 +130,9 @@ RUN groupadd --gid $USER_GID $USER_NAME \
     && groupadd docker \
     && usermod -aG docker $USER_NAME
 
+# Set user as owner of the virtual env
+RUN chown -R $USER_NAME: $VIRTUAL_ENV
+
 
 # ********************************************************
 # * Development
@@ -202,6 +205,7 @@ VOLUME VSCODE_EXT_DIR
 
 # Add local script path to env
 ENV PATH="$APP_PATH/scripts:$PATH"
+
 
 # ********************************************************
 # * Testing

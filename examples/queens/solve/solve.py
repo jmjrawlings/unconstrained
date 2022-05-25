@@ -1,4 +1,4 @@
-from src import *
+from unconstrained import *
 from ..model import *
 
 async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):

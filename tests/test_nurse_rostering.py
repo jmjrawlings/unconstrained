@@ -1,6 +1,5 @@
-from src import *
+from unconstrained import *
 from examples.nurse_rostering import *
-from sqlmodel import select
 from pytest import mark, fixture, param
 
 # async def test_solve_with_dynamic_minizinc(minizinc_options):
