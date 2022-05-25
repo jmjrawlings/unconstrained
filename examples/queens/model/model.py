@@ -27,6 +27,7 @@ class Queen(Model, table=True):
     scenario : "Scenario" = db.backref('queens')
 
 
+
 engine = db.make_engine(path=DATABASE, model=Model)
 
 

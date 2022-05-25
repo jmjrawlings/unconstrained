@@ -1,9 +1,9 @@
 from unconstrained import *
 
-home = Path(__file__).parent
-input = home / 'input'
-output = home / 'output'
-database = output / 'nurse_rostering.db'
+HOME = Path(__file__).parent
+INPUT = HOME / 'input'
+OUTPUT = HOME / 'output'
+DATABASE = OUTPUT / 'nurse_rostering.db'
 
 
 class Model(db.Model):
@@ -12,47 +12,47 @@ class Model(db.Model):
 
 class Day(Model, table=True):
     number : int
-    shifts : List["Shift"] = backref('day')
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('days')
+    shifts : List["Shift"] = db.backref('day')
+    scenario_id : int = db.foreign_key('scenario.id')
+    scenario : "Scenario" = db.backref('days')
 
 
 class Nurse(Model, table=True):
     number : int
-    shifts: List["Shift"] = backref('nurse')
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('nurses')
-    requests : List["Request"] = backref('nurse')
+    shifts: List["Shift"] = db.backref('nurse')
+    scenario_id : int = db.foreign_key('scenario.id')
+    scenario : "Scenario" = db.backref('nurses')
+    requests : List["Request"] = db.backref('nurse')
     
 
 class Shift(Model, table=True):
     number : int
-    day_id : int = foreign_key('day.id')
-    day : "Day" = backref('shifts')
-    nurse_id : Optional[int] = foreign_key('nurse.id')
-    nurse : Optional[Nurse] = backref('shifts')
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('shifts')
-    requests : List["Request"] = backref('shift')
+    day_id : int = db.foreign_key('day.id')
+    day : "Day" = db.backref('shifts')
+    nurse_id : Optional[int] = db.foreign_key('nurse.id')
+    nurse : Optional[Nurse] = db.backref('shifts')
+    scenario_id : int = db.foreign_key('scenario.id')
+    scenario : "Scenario" = db.backref('shifts')
+    requests : List["Request"] = db.backref('shift')
 
 
 class Request(Model, table=True):
-    shift_id : int = foreign_key('shift.id')
-    shift : Shift = backref('requests')
-    nurse_id : int = foreign_key('nurse.id')
-    nurse : Nurse = backref('requests')
-    scenario_id : int = foreign_key('scenario.id')
-    scenario : "Scenario" = backref('requests')
+    shift_id : int = db.foreign_key('shift.id')
+    shift : Shift = db.backref('requests')
+    nurse_id : int = db.foreign_key('nurse.id')
+    nurse : Nurse = db.backref('requests')
+    scenario_id : int = db.foreign_key('scenario.id')
+    scenario : "Scenario" = db.backref('requests')
 
 
 class Scenario(Model, table=True):
-    days   : List[Day] = backref('scenario')
-    shifts : List[Shift] = backref('scenario')
-    nurses : List[Nurse] = backref('scenario')
-    requests : List[Request] = backref('scenario')
+    days   : List[Day] = db.backref('scenario')
+    shifts : List[Shift] = db.backref('scenario')
+    nurses : List[Nurse] = db.backref('scenario')
+    requests : List[Request] = db.backref('scenario')
 
 
-engine = make_engine(path=Paths.database, model=Model)
+engine = db.make_engine(path=DATABASE, model=Model)
 
 
 def create_scenario(
@@ -89,7 +89,7 @@ def create_scenario(
     return scenario
 
 
-async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOptions):
+async def solve_with_minizinc_dynamic(scenario : Scenario, options : mz.SolveOptions):
     """
     Solve the scenario with a generated MiniZinc model.
     """
@@ -100,7 +100,7 @@ async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOption
     requests = scenario.requests
     n,s,d,r = [len(x) for x in [nurses, shifts, days, requests]]
             
-    model = MiniZincModelBuilder()
+    model = mz.ModelBuilder()
     model.add_section('Nurse Rostering')
     model.add_multiline_comment(f'''
     {n} Nurses
@@ -119,16 +119,16 @@ async def solve_with_minizinc_dynamic(scenario : Scenario, options : SolveOption
     #     request._var = model.add_par(type='int', name=f'R{i}', value=i)
 
     model_string = model.string
-    async for result in solutions(model_string, options=options):
+    async for result in mz.solutions(model_string, options=options):
         yield result
         
 
-async def solve_with_minizinc_static(scenario : Scenario, options : SolveOptions):
+async def solve_with_minizinc_static(scenario : Scenario, options : mz.SolveOptions):
     """
     Solve the scenario with a static MiniZinc model
     """
 
-    yield Result()
+    yield mz.Result()
 
 #     model = f"""
 #     include "alldifferent.mzn";
@@ -179,7 +179,7 @@ async def solve_with_minizinc_static(scenario : Scenario, options : SolveOptions
     
 
 
-def solve_with_ortools(scenario : Scenario) -> Result:
+def solve_with_ortools(scenario : Scenario) -> mz.Result:
     from ortools.sat.python import cp_model
     
     # Creates the model.
@@ -227,7 +227,7 @@ def solve_with_ortools(scenario : Scenario) -> Result:
 
     # # Creates the solver and solve.
     # solver = cp_model.CpSolver()
-    # status = solver.Solve(model)
+    # status = solvesdfr.Solve(model)
 
     # if status == cp_model.OPTIMAL:
     #     print('Solution:')
