@@ -219,7 +219,10 @@ FROM builder as test
 ARG APP_PATH
 WORKDIR $APP_PATH
 
-# Install Test Python packages
+# Set user as owner of the App folder
+RUN chown -R $USER_NAME: $APP_PATH
+
+# Install Python testing packages
 COPY ./requirements/test.txt requirements.txt
 RUN pip-sync requirements.txt
 
