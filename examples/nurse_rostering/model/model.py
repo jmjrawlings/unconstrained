@@ -17,38 +17,38 @@ class Scenario(Model, table=True):
 
 
 class Day(Model, table=True):
-    number : int           = db.column()
-    shifts : List["Shift"] = db.relation('day')
     scenario_id : int      = db.foreign_key(Scenario.id)
     scenario : "Scenario"  = db.relation('days')
+    number : int           = db.column()
+    shifts : List["Shift"] = db.relation('day')
 
 
 class Nurse(Model, table=True):
-    number : int
-    shifts: List["Shift"]      = db.relation('nurse')
     scenario_id : int          = db.foreign_key(Scenario.id)
-    scenario : "Scenario"      = db.relation(Scenario.nurses)
+    scenario : Scenario        = db.relation(Scenario.nurses)
+    number : int               = db.column()
+    shifts: List["Shift"]      = db.relation('nurse')
     requests : List["Request"] = db.relation('nurse')
     
 
 class Shift(Model, table=True):
+    scenario_id : int          = db.foreign_key(Scenario.id)
+    scenario : Scenario        = db.relation(Scenario.shifts)
     number : int               = db.column()
     day_id : int               = db.foreign_key(Day.id)
-    day : "Day"                = db.relation(Day.shifts)
+    day : Day                  = db.relation(Day.shifts)
     nurse_id : Optional[int]   = db.foreign_key(Nurse.id)
     nurse : Optional[Nurse]    = db.relation(Nurse.shifts)
-    scenario_id : int          = db.foreign_key(Scenario.id)
-    scenario : "Scenario"      = db.relation(Scenario.shifts)
     requests : List["Request"] = db.relation('shift')
 
 
 class Request(Model, table=True):
-    shift_id : int        = db.foreign_key(Shift.id)
-    shift : Shift         = db.relation(Shift.requests)
-    nurse_id : int        = db.foreign_key(Nurse.id)
-    nurse : Nurse         = db.relation(Nurse.requests)
-    scenario_id : int     = db.foreign_key(Scenario.id)
-    scenario : "Scenario" = db.relation(Scenario.requests)
+    scenario_id : int   = db.foreign_key(Scenario.id)
+    scenario : Scenario = db.relation(Scenario.requests)
+    shift_id : int      = db.foreign_key(Shift.id)
+    shift : Shift       = db.relation(Shift.requests)
+    nurse_id : int      = db.foreign_key(Nurse.id)
+    nurse : Nurse       = db.relation(Nurse.requests)
 
 
 def create_scenario(
