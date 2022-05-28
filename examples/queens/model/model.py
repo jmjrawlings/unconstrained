@@ -7,28 +7,24 @@ OUTPUT = HOME / 'output'
 DATABASE = OUTPUT / 'queens.db'
 
 
-class Model(db.Model):
-    metadata = db.MetaData()
+Model = db.create_model_class()
 
 
 class Scenario(Model, table=True):
+        
     name : str = db.column()
     n    : int = db.column()
 
-    queens : List["Queen"] = db.backref("scenario")
+    queens : List["Queen"] = db.relation("scenario")
 
 
 class Queen(Model, table=True):
     number      : int = db.column()
-    scenario_id : int = db.foreign_key("scenario.id")
+    scenario_id : int = db.foreign_key(Scenario.id)
     row         : int = db.column()
     col         : int = db.column()
     
-    scenario : "Scenario" = db.backref('queens')
-
-
-
-engine = db.make_engine(path=DATABASE, model=Model)
+    scenario : Scenario = db.relation('queens')
 
 
 def create_scenario(n=3) -> Scenario:

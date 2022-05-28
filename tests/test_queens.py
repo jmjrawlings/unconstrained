@@ -2,28 +2,23 @@ from unconstrained import *
 from examples import queens
 from pytest import fixture
 
-@fixture
-def options():
-    return mz.SolveOptions()
-
-
-async def test_solve(options):
-
-    result = mz.Result()
+async def test_solve(minizinc_options):
         
-    with db.Session(queens.engine) as session:
+    result = mz.Result()
+    engine = db.create_engine(queens.Model)
+                        
+    with db.session(engine) as session:
         scenario = queens.create_scenario(n=5)
         session.add(scenario)
         session.commit()
         session.refresh(scenario)
                  
-        async for result in queens.solve(scenario, options, name=scenario.name):
+        async for result in queens.solve(scenario, minizinc_options, name=scenario.name):
             session.commit()
 
         session.refresh(scenario)
+        chart = queens.plot(scenario)
 
-    chart = queens.plot(scenario)
-    
     ch.save(
         chart, 
         path=queens.OUTPUT / f'{scenario.name}.html',
