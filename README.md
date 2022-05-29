@@ -49,6 +49,27 @@ a comprehensive and productive environment to modelling and solving Constraint P
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
+## "The Stack"
+The set of tools and packages I'm currently using to model and solve problems.  This will change over time.
+
+### Visual Studio Code
+
+#### Plugins
+
+### MiniZinc
+
+### Python
+
+### Google ORTools
+
+### Vega-Lite
+
+### H20 Wave
+
+### Docker
+
+### Dagger
+
 
 ## Included Examples
 
@@ -117,4 +138,4 @@ a comprehensive and productive environment to modelling and solving Constraint P
 - local variables (eg: {localEnv:USERNAME}) are not passed through properly from WSL2 to the container build
 
 ### Dagger
-Does dagger contain its own internal docker engine? 
+- Does dagger contain its own internal docker engine? 

@@ -12,7 +12,9 @@
             "APP_PATH": "/workspaces/unconstrained"
         }
     },
-                
+    
+    "postCreateCommand": "sudo chown root:docker /var/run/docker.sock",
+                    
     "mounts":[
         // Mount the host docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
@@ -54,9 +56,7 @@
         // Misc
         "editor.detectIndentation": false,
         "editor.insertSpaces": true,
-        "telemetry.enableTelemetry": false,
-        "telemetry.telemetryLevel" : 0,
-
+        "telemetry.telemetryLevel" : "off"
     },
 
     "extensions": [

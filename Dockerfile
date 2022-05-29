@@ -8,11 +8,13 @@ ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG PYTHON_VENV=/opt/venv
+ARG DAGGER_VERSION=0.2.12
 ARG APP_PATH=/app
 ARG USER_NAME=jmjr
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
+
 
 # ********************************************************
 # * MiniZinc Builder
@@ -128,6 +130,9 @@ RUN groupadd --gid $USER_GID $USER_NAME \
     && groupadd docker \
     && usermod -aG docker $USER_NAME
 
+# Set user as owner of the virtual env
+RUN chown -R $USER_NAME: $VIRTUAL_ENV
+
 
 # ********************************************************
 # * Development
@@ -167,6 +172,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
     && chmod +x /usr/local/bin/docker-compose
 
 # Install Dagger - TODO: pin version
+ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
 RUN mv ./bin/dagger /usr/local/bin
 
@@ -200,6 +206,7 @@ VOLUME VSCODE_EXT_DIR
 # Add local script path to env
 ENV PATH="$APP_PATH/scripts:$PATH"
 
+
 # ********************************************************
 # * Testing
 #
@@ -210,9 +217,11 @@ ENV PATH="$APP_PATH/scripts:$PATH"
 FROM builder as test
 
 ARG APP_PATH
+ARG USER_NAME
+
 WORKDIR $APP_PATH
 
-# Install Test Python packages
+# Install Python testing packages
 COPY ./requirements/test.txt requirements.txt
 RUN pip-sync requirements.txt
 
@@ -222,5 +231,7 @@ COPY ./unconstrained ./unconstrained
 COPY ./examples ./examples
 COPY ./pytest.ini . 
 
-ARG USER_NAME
+# Set user as owner of the App folder
+RUN chown -R $USER_NAME: $APP_PATH
+
 USER $USER_NAME

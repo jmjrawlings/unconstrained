@@ -71,5 +71,5 @@ from .model import (
     mz_value,
     VAR,
     PAR,
-    MiniZincModelBuilder
+    ModelBuilder
 )

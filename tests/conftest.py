@@ -3,7 +3,7 @@ from pytest import fixture, mark
 
 @fixture
 def minizinc_options():
-    return SolveOptions()
+    return mz.SolveOptions()
 
 @fixture
 def output_dir():

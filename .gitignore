@@ -5,8 +5,8 @@
 book/_build
 
 # Test output
-tests/output/*.*
-!tests/output/.gitkeep
+examples/*/output/*.*
+!examples/*/output/.gitkeep
 
 .docker/
 

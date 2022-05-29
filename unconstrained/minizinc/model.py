@@ -309,7 +309,7 @@ def mz_predicate(name, body, **kwargs):
     return mz_call("predicate", name, body, **kwargs)
 
 
-class MiniZincModelBuilder:
+class ModelBuilder:
     """
     Builder for MiniZinc '.mzn' models
     """

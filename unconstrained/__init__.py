@@ -1,2 +1,4 @@
 from .prelude import *
-from .minizinc import *
+from . import minizinc as mz 
+from . import database as db
+from . import charting as ch

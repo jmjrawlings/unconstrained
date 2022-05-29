@@ -1,1 +1,0 @@
-from .n_queens import *
