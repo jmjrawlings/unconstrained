@@ -217,10 +217,9 @@ ENV PATH="$APP_PATH/scripts:$PATH"
 FROM builder as test
 
 ARG APP_PATH
-WORKDIR $APP_PATH
+ARG USER_NAME
 
-# Set user as owner of the App folder
-RUN chown -R $USER_NAME: $APP_PATH
+WORKDIR $APP_PATH
 
 # Install Python testing packages
 COPY ./requirements/test.txt requirements.txt
@@ -232,5 +231,7 @@ COPY ./unconstrained ./unconstrained
 COPY ./examples ./examples
 COPY ./pytest.ini . 
 
-ARG USER_NAME
+# Set user as owner of the App folder
+RUN chown -R $USER_NAME: $APP_PATH
+
 USER $USER_NAME
