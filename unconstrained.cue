@@ -54,13 +54,13 @@ dagger.#Plan & {
             name: "dev" 
         }
                 
-        // Load the Test image into the hosts docker engine
+        // Load the Test image into the hosts docker engine for debugging
         LoadTest: #_loadDockerImage & {
             image: _testImage
             tag: "unconstrained:test"
         }
 
-        // Load the Dev image into the hosts docker engine
+        // Load the Dev image into the hosts docker engine for debugging
         LoadDev: #_loadDockerImage & {
             image: _devImage
             tag: "unconstrained:dev"
