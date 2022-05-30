@@ -31,12 +31,15 @@ async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
         satisfy;
     """
 
-    async for result in mz.solutions(model, options, **kwargs):
+    async for result in mz.solve(model, options, **kwargs):
+        if not result.has_solution:
+            yield result
+            continue
+
         array = result['q']
         for i, row in enumerate(array):
             queen = scenario.queens[i]
             queen.col = i + 1
             queen.row = row
-            log.info(f'Queen {queen.number} at ({queen.row}, {queen.col})')
 
         yield result
