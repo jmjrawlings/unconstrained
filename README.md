@@ -1,5 +1,7 @@
 # Unconstrained
 
+[![unconstrained](https://github.com/jmjrawlings/unconstrained/actions/workflows/test.yaml/badge.svg)](https://github.com/jmjrawlings/unconstrained/actions/workflows/test.yaml)
+
 Constraint Programming for Fun and Profit.
 
 This repository aims to provide a productive environment in which to to model and solve  Constraint Programming problems.
