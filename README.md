@@ -2,8 +2,7 @@
 
 Constraint Programming for Fun and Profit.
 
-This repository represents my search for 
-a comprehensive and productive environment to modelling and solving Constraint Programming problems.
+This repository aims to provide a productive environment in which to to model and solve  Constraint Programming problems.
 
 
 ## Goals
@@ -138,4 +137,8 @@ The set of tools and packages I'm currently using to model and solve problems.  
 - local variables (eg: {localEnv:USERNAME}) are not passed through properly from WSL2 to the container build
 
 ### Dagger
-- Does dagger contain its own internal docker engine? 
+- Does dagger contain its own internal docker engine?
+- Can we use the hosts docker engine by default to avoid repeat image builds?
+
+### SqlModel
+- Should normal functions be written with knowledge of the `session` ? Feels like the codebase would get polluted with a lot of sqlmodel code
