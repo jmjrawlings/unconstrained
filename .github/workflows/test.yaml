@@ -3,7 +3,8 @@ name: unconstrained
 on:
   push:
     branches:
-      - main
+      - master
+  workflow_dispatch:
 
 jobs:
   dagger:
