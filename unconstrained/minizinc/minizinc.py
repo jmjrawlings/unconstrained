@@ -9,6 +9,7 @@ from minizinc.CLI.instance import CLIInstance as MzInstance
 from minizinc.CLI.driver import CLIDriver as Driver
 from minizinc import find_driver
 from typing import TypedDict
+from shutil import copy
 import math
 
 
@@ -231,7 +232,7 @@ FLATTEN_SAC         = FlattenOption.SAC
 @attr.s(**ATTRS)
 class Result:
     """
-    A result provided by MiniZinc
+    The result of solving a model
     """
     name             : str             = string_field()
     model_string     : str             = string_field()
@@ -326,12 +327,13 @@ class SolveOptions:
     free_search     : bool          = bool_field(default=True)
     
 
-async def solutions(
+async def solve(
         model : str,
         options : SolveOptions,
         name : str = 'model',
         debug_path : Union[Path, str] = '/tmp',
-        **parameters
+        parameters : Optional[Dict[str, Any]] = None,
+        **kwargs
         ) -> AsyncIterable[Result]:
     
     
@@ -343,11 +345,10 @@ async def solutions(
         
     # Create the MiniZinc Instance
     try:
-        from shutil import copy
         instance = MzInstance(solver)
         instance.add_string(result.model_string)
                         
-        for param, value in parameters.items():
+        for param, value in (parameters or {}).items():
             instance[param] = value
                                                                                                     
         with instance.files() as files:
@@ -372,7 +373,7 @@ async def solutions(
                 else:
                     file_type = "???"
                 
-                log.info(f'"{name}" {file_type} file written to {debug_file}')
+                log.info(f'"{name}" {file_type} written to {debug_file}')
 
 
         result.method = instance.method
@@ -401,6 +402,7 @@ async def solutions(
             optimisation_level = options.flatten_options.value,
             free_search = '-f' in solver.stdFlags and options.free_search,
             processes = '-p' in solver.stdFlags and options.threads,
+            **kwargs
         ):
         
             statistics = previous.statistics.copy()
@@ -460,7 +462,7 @@ async def solutions(
                     status = ERROR
 
                 result.status = status
-
+                
                 for key,value in statistics.items():
                     log.trace(f'"{name}" {key} = {value}')
 
@@ -537,7 +539,7 @@ async def solutions(
     return
 
 
-async def solve(model : str, options : SolveOptions, **kwargs) -> Result:
+async def best_solution(model : str, options : SolveOptions, **kwargs) -> Result:
     """
     Solve the model, returning only the last (and best) solution.
 
@@ -545,20 +547,28 @@ async def solve(model : str, options : SolveOptions, **kwargs) -> Result:
     """
     result = Result()
     
-    async for result in solutions(model, options=options, **kwargs):
+    async for result in solve(model, options=options, **kwargs):
         pass
     
     return result
 
 
-async def satisfy(model : str, options : SolveOptions, **kwargs) -> Tuple[Result, List[Result]]:
+async def satisfy(model : str, options : SolveOptions, parameters=None, **kwargs) -> Result:
+    """
+    Solve the model and return the first satisfactory solution
+    """
+    result = await best_solution(model, options, all_solutions=False, parameters=parameters, **kwargs)
+    return result
+
+
+async def all_solutions(model : str, options : SolveOptions, parameters=None, **kwargs) -> Tuple[Result, List[Result]]:
     """
     Solve the model returning all satisfactory solutions
     """
     completed = Result()
     results = []
-                        
-    async for result in solutions(model, options=options, **kwargs):
+                            
+    async for result in solve(model, options=options, parameters=parameters, all_solutions=True, **kwargs):
         if result.status == FEASIBLE:
             results.append(result)
         else:

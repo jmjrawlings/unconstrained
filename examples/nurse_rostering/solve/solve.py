@@ -31,7 +31,7 @@ async def solve_with_minizinc_dynamic(scenario : Scenario, options : mz.SolveOpt
     #     request._var = model.add_par(type='int', name=f'R{i}', value=i)
 
     model_string = model.string
-    async for result in mz.solutions(model_string, options=options):
+    async for result in mz.solve(model_string, options=options):
         yield result
         
 
