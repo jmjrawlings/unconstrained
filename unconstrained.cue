@@ -26,7 +26,7 @@ dagger.#Plan & {
     actions: {
 
         // Build a target image from the main Dockerfile
-        #_dockerfileTarget: {
+        #build_dockerfile_target: {
             name: string
             _build: core.#Dockerfile & 
                 {
@@ -40,39 +40,39 @@ dagger.#Plan & {
         }
         
         // Load a docker image into the hosts docker engine
-        #_loadDockerImage: cli.#Load & {
+        #load_docker_image: cli.#Load & {
             host:  client.network."unix:///var/run/docker.sock".connect
         }
 
-        // Test Image
-        _testImage: #_dockerfileTarget & {
+        // Build the testing docker image
+        build_test_image: #build_dockerfile_target & {
             name: "test"
         }
                 
-        // Dev Image
-        _devImage: #_dockerfileTarget & {
+        // Build the development docker image
+        build_dev_image: #build_dockerfile_target & {
             name: "dev" 
         }
-                
-        // Load the Test image into the hosts docker engine for debugging
-        LoadTest: #_loadDockerImage & {
-            image: _testImage
+                                        
+        // Load the test image into the hosts docker engine for debugging
+        load_test_image: #load_docker_image & {
+            image: build_test_image
             tag: "unconstrained:test"
         }
 
-        // Load the Dev image into the hosts docker engine for debugging
-        LoadDev: #_loadDockerImage & {
-            image: _devImage
+        // Load the dev image into the hosts docker engine for debugging
+        load_dev_image: #load_docker_image & {
+            image: build_dev_image
             tag: "unconstrained:dev"
         }
 
         // Run the test suite
-        Test: {
+        test: {
             
             // Test Python is installed
-            PythonInstalled: docker.#Run & 
+            test_python_installed: docker.#Run & 
                 {
-                input : _testImage
+                input : build_test_image
                 command: {
                     name: "python3"
                     args: ["--version"]
@@ -80,9 +80,9 @@ dagger.#Plan & {
             }
 
             // Test MiniZinc is installed
-            MiniZincInstalled: docker.#Run & 
+            test_minizinc_installed: docker.#Run & 
                 {
-                input : _testImage
+                input : build_test_image
                 command: {
                     name: "minizinc"
                     args: ["--version"]
@@ -90,9 +90,9 @@ dagger.#Plan & {
                 }
 
             // Run PyTest suite
-            PyTest: docker.#Run & 
+            pytest: docker.#Run & 
                 {
-                input: _testImage
+                input: build_test_image
                 command: {
                     name: "pytest"
                 }
