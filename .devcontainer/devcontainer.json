@@ -4,24 +4,25 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dev",
-        "args": {
-            "USER_UID": "1000",
-            "USER_GID": "1000",        
-            "USER_NAME": "harken",
-            "APP_PATH": "/workspaces/unconstrained"
-        }
+        "target": "devcontainer"
     },
-    
-    "postCreateCommand": "sudo chown root:docker /var/run/docker.sock",
-                    
+
     "mounts":[
         // Mount the host docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
-        "source=unconstrained-vscode-extensions,target=/home/harken/.vscode-server/extensions,type=volume"
+        // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
+        // "source=unconstrained-vscode-extensions,target=/root/.vscode-server/extensions,type=volume",
     ],
-            
+        
+    "remoteEnv": {
+        // Add the local scripts directory to PATH
+        "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
+    },
+    
+    "containerEnv": {
+        "DO_NOT_TRACK" : "1"
+    },
+                        
     "settings": {
         
         // Python location
@@ -79,10 +80,6 @@
     "runArgs": [ 
         "--init",
         "--net", "host"
-    ],
-        
-    "containerEnv": {
-        "DO_NOT_TRACK" : "1"
-    },
-
+    ]
+    
 }

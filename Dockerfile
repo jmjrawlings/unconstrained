@@ -9,12 +9,7 @@ ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG PYTHON_VENV=/opt/venv
 ARG DAGGER_VERSION=0.2.12
-ARG APP_PATH=/app
-ARG USER_NAME=jmjr
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
 ARG DEBIAN_FRONTEND=noninteractive
-
 
 # ********************************************************
 # * MiniZinc Builder
@@ -105,34 +100,15 @@ COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
 COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 
 # Create a python virtual environment
-ARG APP_PATH
-RUN mkdir -p $APP_PATH
-WORKDIR $APP_PATH
-
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
+# RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
 
 # Install Python packages
-ADD ./requirements/base.txt requirements.txt
-RUN pip install pip-tools && pip-sync requirements.txt
-
-# Create an alternate user with passwordless sudo 
-# and docker access
-ARG USER_NAME
-ARG USER_UID
-ARG USER_GID
-
-RUN groupadd --gid $USER_GID $USER_NAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USER_NAME \
-    && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER_NAME \
-    && chmod 0440 /etc/sudoers.d/$USER_NAME \
-    && groupadd docker \
-    && usermod -aG docker $USER_NAME
-
-# Set user as owner of the virtual env
-RUN chown -R $USER_NAME: $VIRTUAL_ENV
-
+ADD ./requirements/base.txt /opt/requirements.txt
+RUN pip install pip-tools && \
+    pip-sync /opt/requirements.txt && \
+    rm /opt/requirements.txt
 
 # ********************************************************
 # * Development
@@ -145,7 +121,7 @@ RUN chown -R $USER_NAME: $VIRTUAL_ENV
 # See https://code.visualstudio.com/docs/remote/containers
 # ********************************************************
 
-FROM builder as dev
+FROM builder as devcontainer
 
 # Install packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -177,10 +153,7 @@ RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
 RUN mv ./bin/dagger /usr/local/bin
 
 # Install zsh & oh-my-zsh
-ARG USER_NAME
-USER $USER_NAME
-WORKDIR /home/$USER_NAME
-COPY .devcontainer/.p10k.zsh .
+COPY .devcontainer/.p10k.zsh /root/.p10k.zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.2/zsh-in-docker.sh)" -- \
     -p git \
     -p https://github.com/zsh-users/zsh-autosuggestions \
@@ -188,24 +161,12 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     && echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc \
     && bash -c 'zsh -is <<<exit &>/dev/null' \
     && $HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install \
-    && sudo usermod --shell $(which zsh) $USER_NAME 
+    && sudo usermod --shell $(which zsh) root
 
 # Install Dev Python packages
-ARG APP_PATH
-WORKDIR $APP_PATH   
-USER root
-COPY ./requirements/dev.txt requirements.txt
-RUN pip-sync requirements.txt && rm requirements.txt
-
-# Create VSCode extension folders to cache
-USER $USER_NAME
-ARG VSCODE_EXT_DIR=/home/$USER_NAME/.vscode-server/extensions
-RUN mkdir -p $VSCODE_EXT_DIR
-VOLUME VSCODE_EXT_DIR
-
-# Add local script path to env
-ENV PATH="$APP_PATH/scripts:$PATH"
-
+COPY ./requirements/dev.txt /opt/requirements.txt
+RUN pip-sync /opt/requirements.txt \
+    && rm /opt/requirements.txt
 
 # ********************************************************
 # * Testing
@@ -216,8 +177,7 @@ ENV PATH="$APP_PATH/scripts:$PATH"
 
 FROM builder as test
 
-ARG APP_PATH
-ARG USER_NAME
+ARG APP_PATH="/unconstrained"
 
 WORKDIR $APP_PATH
 
@@ -229,9 +189,4 @@ RUN pip-sync requirements.txt
 COPY ./tests ./tests
 COPY ./unconstrained ./unconstrained 
 COPY ./examples ./examples
-COPY ./pytest.ini . 
-
-# Set user as owner of the App folder
-RUN chown -R $USER_NAME: $APP_PATH
-
-USER $USER_NAME
+COPY ./pytest.ini .

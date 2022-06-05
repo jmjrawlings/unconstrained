@@ -51,9 +51,9 @@ dagger.#Plan & {
                 
         // Build the development docker image
         build_dev_image: #build_dockerfile_target & {
-            name: "dev" 
+            name: "devcontainer" 
         }
-                                        
+                                                
         // Load the test image into the hosts docker engine for debugging
         load_test_image: #load_docker_image & {
             image: build_test_image
