@@ -8,7 +8,7 @@ ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
 ARG PYTHON_VENV=/opt/venv
-ARG DAGGER_VERSION=0.2.12
+ARG DAGGER_VERSION=0.2.18
 ARG DEBIAN_FRONTEND=noninteractive
 
 # ********************************************************
