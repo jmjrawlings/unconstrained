@@ -68,26 +68,6 @@ dagger.#Plan & {
 
         // Run the test suite
         test: {
-            
-            // Test Python is installed
-            test_python_installed: docker.#Run & 
-                {
-                input : build_test_image
-                command: {
-                    name: "python3"
-                    args: ["--version"]
-                }
-            }
-
-            // Test MiniZinc is installed
-            test_minizinc_installed: docker.#Run & 
-                {
-                input : build_test_image
-                command: {
-                    name: "minizinc"
-                    args: ["--version"]
-                }
-                }
 
             // Run PyTest suite
             pytest: docker.#Run & 

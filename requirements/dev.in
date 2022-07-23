@@ -1,4 +1,3 @@
--r test.in
 -c test.txt
 faker
 iminizinc
