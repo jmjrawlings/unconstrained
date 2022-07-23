@@ -1,15 +1,15 @@
 # ********************************************************
 # * Key Arguments
 # ********************************************************
-ARG MINIZINC_VERSION=2.6.2
-ARG MINIZINC_HOME=/usr/local/share/minizinc
-ARG ORTOOLS_VERSION=9.3
-ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
+ARG MINIZINC_VERSION=2.6.4
+ARG ORTOOLS_VERSION=9.3
+ARG ORTOOLS_BUILD=10502
+ARG DAGGER_VERSION=0.2.25
+
 ARG PYTHON_VENV=/opt/venv
-ARG DAGGER_VERSION=0.2.20
-ARG DEBIAN_FRONTEND=noninteractive
+ARG MINIZINC_HOME=/usr/local/share/minizinc
 
 # ********************************************************
 # * MiniZinc Builder
@@ -22,20 +22,20 @@ ARG DEBIAN_FRONTEND=noninteractive
 # ********************************************************
 FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 
+ARG UBUNTU_VERSION
 ARG MINIZINC_HOME
 ARG ORTOOLS_VERSION
 ARG ORTOOLS_BUILD
 ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
-ARG UBUNTU_VERSION
 ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v$ORTOOLS_VERSION.$ORTOOLS_BUILD
 ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v$ORTOOLS_VERSION/$ORTOOLS_TAR_NAME.tar.gz
 ARG ORTOOLS_MSC=$MINIZINC_HOME/solvers/ortools.msc
-ARG DEBIAN_FRONTEND
 
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
-        wget
+        wget \
+    && rm -rf /var/lib/apt/lists/*
     
 # Install OR-Tools into MiniZinc directory
 RUN mkdir $ORTOOLS_HOME && \
@@ -69,30 +69,30 @@ RUN echo '{ \n\
 # dependencies
 # ********************************************************
 
-ARG UBUNTU_VERSION
 FROM ubuntu:$UBUNTU_VERSION as builder
 
 ARG PYTHON_VENV
 ARG PYTHON_VERSION
-ARG DEBIAN_FRONTEND
+ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHON_NAME=python$PYTHON_VERSION
 ENV VIRTUAL_ENV=$PYTHON_VENV
 
 # Install Python3 + helpful packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        $PYTHON_NAME \
+        $PYTHON_NAME-dev \
+        $PYTHON_NAME-venv \
         apt-transport-https \
         build-essential \
         ca-certificates \
         curl \
         gnupg2 \ 
-        $PYTHON_NAME \
-        $PYTHON_NAME-dev \
-        $PYTHON_NAME-venv \
         python3-pip \
         python3-wheel \
         sqlite3 \
         sudo \
-        wget
+        wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy MiniZinc + ORTools from the build layer
 ARG MINIZINC_HOME
@@ -102,7 +102,6 @@ COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 # Create a python virtual environment
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
 
 # Install Python packages
 ADD ./requirements/base.txt /opt/requirements.txt
@@ -123,6 +122,8 @@ RUN pip install pip-tools && \
 
 FROM builder as devcontainer
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Install packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         fonts-powerline \
@@ -134,7 +135,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         lsb-release \
         micro \
         openssh-client \
-        zsh
+        zsh \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \

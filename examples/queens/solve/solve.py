@@ -5,7 +5,7 @@ async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
     """
     Solve the scenario with the given options
     """
-        
+            
     model = f"""
     % N-Queens satisfaction model
     include "alldifferent.mzn";
@@ -32,6 +32,7 @@ async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
     """
 
     async for result in mz.solve(model, options, **kwargs):
+        
         if not result.has_solution:
             yield result
             continue

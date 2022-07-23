@@ -1,7 +1,8 @@
 from unconstrained.charting import *
 from ..model import *
 
-def create_chart_data(scenario : Scenario):
+
+def create_chart_data(scenario : Scenario):    
     records = []
     for queen in scenario.queens:
         records.append(dict(

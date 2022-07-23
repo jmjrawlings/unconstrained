@@ -335,7 +335,10 @@ async def solve(
         parameters : Optional[Dict[str, Any]] = None,
         **kwargs
         ) -> AsyncIterable[Result]:
-    
+
+    """
+    Solve the given minizinc model.
+    """
     
     solver = get_solver(options.solver_id)
     debug_path = to_directory(debug_path or '/tmp', create=True)
