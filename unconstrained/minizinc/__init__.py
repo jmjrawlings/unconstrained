@@ -11,7 +11,7 @@ from .minizinc import (
     satisfy,
     solve,
     Driver,
-    find_driver,
+    get_driver,
     Status,
     ORTOOLS,
     CHUFFED,

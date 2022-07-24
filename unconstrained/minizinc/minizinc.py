@@ -5,9 +5,8 @@ from minizinc import Method
 from minizinc import Result as MzResult
 from minizinc import Solver as Solver
 from minizinc import Status as MzStatus
-from minizinc.CLI.instance import CLIInstance as MzInstance
-from minizinc.CLI.driver import CLIDriver as Driver
-from minizinc import find_driver
+from minizinc import Instance
+from minizinc import Driver
 from typing import TypedDict
 from shutil import copy
 import math
@@ -108,11 +107,22 @@ def get_solver(x) -> Solver:
     return solver
 
 
+def get_driver() -> Driver:
+    """
+    Get the MiniZinc driver, throws an 
+    exception if not found
+    """
+    driver = Driver.find()
+    if driver is None:
+        raise Exception(f'MiniZinc is not installed')
+    return driver
+
+
 def get_available_solvers() -> List[Solver]:
     """
     Get the available solvers
     """
-    driver : Driver = find_driver() #type:ignore
+    driver = get_driver()
     solvers = {}
     for tag, tag_solvers in driver.available_solvers(True).items():
         for solver in tag_solvers:
@@ -154,7 +164,7 @@ class VariableChoice(Enum):
     SMALLEST = "smallest"
     # choose the variable with the smallest value of domain size divided by weighted degree, which is the number of times it has been in a constraint that caused failure earlier in the search
     DOM_W_DEG = "dom_w_deg"
-
+    
 
 class ConstrainChoice(Enum):
     # assign the variable its smallest domain value
@@ -348,7 +358,7 @@ async def solve(
         
     # Create the MiniZinc Instance
     try:
-        instance = MzInstance(solver)
+        instance = Instance(solver)
         instance.add_string(result.model_string)
                         
         for param, value in (parameters or {}).items():

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Recompile project requirements
+cd requirements
+pip-compile base.in
+pip-compile test.in
+pip-compile dev.in

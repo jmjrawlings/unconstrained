@@ -1,6 +1,5 @@
 from unconstrained import *
 from pytest import mark, fixture
-from minizinc.CLI.driver import CLIDriver
 
 from unconstrained.minizinc.minizinc import GECODE
 
@@ -15,8 +14,8 @@ def minizinc_threads() -> int:
     return 8
 
 @fixture
-def minizinc_driver() -> CLIDriver:
-    return mz.find_driver()
+def minizinc_driver() -> mz.Driver:
+    return mz.get_driver()
 
 
 @fixture

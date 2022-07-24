@@ -1,8 +1,8 @@
--c test.txt
+-r test.in
 faker
 iminizinc
-vega-datasets
 ipywidgets
 jupyter-book
 jupyterlab
 pdbpp
+vega-datasets

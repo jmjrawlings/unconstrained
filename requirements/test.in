@@ -1,4 +1,4 @@
--c base.txt
+-r base.in
 pytest
-pytest-watch
 pytest-asyncio
+pytest-watch
