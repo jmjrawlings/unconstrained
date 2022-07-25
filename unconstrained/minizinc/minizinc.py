@@ -10,6 +10,9 @@ from minizinc import Driver
 from typing import TypedDict
 from shutil import copy
 import math
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class Statistics(TypedDict, total=False):
@@ -144,11 +147,11 @@ class Status(Enum):
     ERROR         = "error"
     UNKNOWN       = "unknown"
     UNBOUNDED     = "unbounded"
-    ALL_SOLUTIONS = "all-solutions"
+    ALL_SOLUTIONS = "all_solutions"
         
     @property
     def has_solution(self):
-        return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD, Status.ALL_SOLUTIONS]
+        return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD]
 
     @property
     def is_error(self):        
@@ -442,30 +445,30 @@ async def solve(
 
             if 'flatTime' in statistics:
                 flat_time = statistics['flatTime']
-                result.compile_time = to_duration(seconds=flat_time)
+                result.compile_time = to_duration(flat_time)
 
-            mz_status = solution.status
-            result.solution = previous.solution.copy()
-                                                                                    
+            result.solution.clear()
+                                                                                               
             # No solution - MiniZinc has terminated
             if solution.solution is None:
-                
-                if mz_status == MzStatus.OPTIMAL_SOLUTION:
+                                                
+                if solution.status == MzStatus.OPTIMAL_SOLUTION:
+                    solution.solution = previous.solution.copy()
                     status = OPTIMAL
 
-                elif mz_status == MzStatus.UNSATISFIABLE:
+                elif solution.status == MzStatus.UNSATISFIABLE:
                     status = UNSATISFIABLE
 
-                elif mz_status == MzStatus.SATISFIED:
+                elif solution.status == MzStatus.SATISFIED:
                     status = FEASIBLE
 
-                elif mz_status == MzStatus.UNBOUNDED:
+                elif solution.status == MzStatus.UNBOUNDED:
                     status = UNBOUNDED
 
-                elif mz_status == MzStatus.ALL_SOLUTIONS:
+                elif solution.status == MzStatus.ALL_SOLUTIONS:
                     status = ALL_SOLUTIONS
 
-                elif mz_status == MzStatus.UNKNOWN:
+                elif solution.status == MzStatus.UNKNOWN:
                     if result.solve_duration > options.time_limit:
                         status = TIMEOUT
                     else:
@@ -484,7 +487,7 @@ async def solve(
                     f'"{name}" returned "{status.name}" after {result.elapsed}'
                 )
                 break
-
+            
             # An intermediate solution has been given
             objective : Optional[int]   = None
             bound     : Optional[int]   = None
@@ -529,6 +532,7 @@ async def solve(
             result.relative_delta  = rel_delta
             
             # Extract solved variables
+            result.solution.clear()
             for var in variables:
                 value = solution[var]
                 result.solution[var] = value
@@ -580,7 +584,7 @@ async def all_solutions(model : str, options : SolveOptions, parameters=None, **
     """
     completed = Result()
     results = []
-                            
+                                        
     async for result in solve(model, options=options, parameters=parameters, all_solutions=True, **kwargs):
         if result.status == FEASIBLE:
             results.append(result)

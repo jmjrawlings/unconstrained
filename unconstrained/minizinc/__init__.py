@@ -22,7 +22,6 @@ from .minizinc import (
     THRESHOLD,
     UNSATISFIABLE,
     TIMEOUT,
-    ALL_SOLUTIONS,
     ERROR,
     UNKNOWN,
     UNBOUNDED,

@@ -84,6 +84,6 @@
     ],
 
     "postAttachCommand":
-        "sudo chmod +x /workspaces/unconstrained/scripts/*.sh"
+        "sudo chmod +x /workspaces/unconstrained/scripts/*"
     
 }

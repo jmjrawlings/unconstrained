@@ -34,9 +34,10 @@ async def test_solve_satisfy(minizinc_options):
         constraint a = 1;
         constraint b = true;
         """,
-        minizinc_options
+        minizinc_options,
+        name='test satisfy'
         )
-    assert result.status == mz.ALL_SOLUTIONS, result.error
+    assert result.status == mz.FEASIBLE, result.error
     assert result['a']
     assert result['b']
 
@@ -49,7 +50,8 @@ async def test_solve_optimise(minizinc_options):
         constraint a < b;
         solve maximize (b - a);
         """,
-        minizinc_options
+        minizinc_options,
+        name='test optimise'
         )
     assert result.objective == 9, result.error
     assert result.status == mz.OPTIMAL
@@ -63,7 +65,8 @@ async def test_syntax_error(minizinc_options):
         var 1 @#$  %$$%@@@323.10: a;
         var bool: b;
         """,
-        minizinc_options
+        minizinc_options,
+        name='test syntax'
         )
     assert result.error
     assert result.status == mz.ERROR
@@ -72,9 +75,13 @@ async def test_syntax_error(minizinc_options):
 async def test_solve_all_solutions(minizinc_options : mz.SolveOptions):
     minizinc_options.solver_id = mz.GECODE
     
-    result, solutions = await mz.all_solutions("var {1,2,3}: a;", minizinc_options)
-    
-    assert result.status == mz.ALL_SOLUTIONS, result.error
+    result, solutions = await mz.all_solutions(
+        "var {1,2,3}: a;",
+        minizinc_options,
+        name='test all'
+    )
+        
+    assert result.status == mz.FEASIBLE, result.error
     assert len(solutions) == 3
 
 
@@ -86,7 +93,8 @@ async def test_solve_unsatisfiable_model(minizinc_options):
         var 2..2: b;
         constraint b < a;
         """,
-        minizinc_options
+        minizinc_options,
+        name='test unsat'
         )
     assert result.status == mz.UNSATISFIABLE
 
