@@ -50,6 +50,7 @@ This repository aims to provide a productive environment in which to to model an
 - Open repo in VSCode
 - Ctrl+Shift+P `Reopen Folder in Container`
 
+
 ## "The Stack"
 The set of tools and packages I'm currently using to model and solve problems.  This will change over time.
 

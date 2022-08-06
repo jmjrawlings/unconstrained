@@ -9,7 +9,7 @@ absl-py==1.2.0
 alabaster==0.7.12
     # via sphinx
 altair==4.2.0
-    # via -r base.in
+    # via -r prod.in
 anyio==3.5.0
     # via jupyter-server
 argon2-cffi==21.3.0
@@ -24,7 +24,7 @@ asttokens==2.0.5
     # via stack-data
 attrs==21.4.0
     # via
-    #   -r base.in
+    #   -r prod.in
     #   cattrs
     #   jsonschema
     #   jupyter-cache
@@ -45,7 +45,7 @@ beautifulsoup4==4.10.0
 bleach==4.1.0
     # via nbconvert
 cattrs==22.1.0
-    # via -r base.in
+    # via -r prod.in
 certifi==2021.10.8
     # via
     #   httpx
@@ -110,7 +110,7 @@ h11==0.13.0
     #   httpcore
     #   uvicorn
 h2o-wave==0.22.0
-    # via -r base.in
+    # via -r prod.in
 httpcore==0.12.3
     # via httpx
 httpx==0.16.1
@@ -230,7 +230,7 @@ latexcodec==2.0.1
 linkify-it-py==1.0.3
     # via jupyter-book
 loguru==0.6.0
-    # via -r base.in
+    # via -r prod.in
 markdown-it-py==1.1.0
     # via
     #   mdit-py-plugins
@@ -244,7 +244,7 @@ matplotlib-inline==0.1.3
 mdit-py-plugins==0.2.8
     # via myst-parser
 minizinc==0.7.0
-    # via -r base.in
+    # via -r prod.in
 mistune==0.8.4
     # via nbconvert
 myst-nb==0.13.2
@@ -296,7 +296,7 @@ numpy==1.22.3
     #   ortools
     #   pandas
 ortools==9.3.10497
-    # via -r base.in
+    # via -r prod.in
 packaging==21.3
     # via
     #   bleach
@@ -307,7 +307,7 @@ packaging==21.3
     #   qtpy
     #   sphinx
 palettable==3.3.0
-    # via -r base.in
+    # via -r prod.in
 pandas==1.4.1
     # via
     #   altair
@@ -320,7 +320,7 @@ parso==0.8.3
 pdbpp==0.10.3
     # via -r dev.in
 pendulum==2.1.2
-    # via -r base.in
+    # via -r prod.in
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
@@ -423,7 +423,7 @@ requests==2.27.1
 rfc3986[idna2008]==1.5.0
     # via httpx
 rich==12.5.1
-    # via -r base.in
+    # via -r prod.in
 send2trash==1.8.0
     # via
     #   jupyter-server
@@ -505,7 +505,7 @@ sqlalchemy==1.4.32
 sqlalchemy2-stubs==0.0.2a24
     # via sqlmodel
 sqlmodel==0.0.6
-    # via -r base.in
+    # via -r prod.in
 stack-data==0.2.0
     # via ipython
 starlette==0.13.8
@@ -554,7 +554,7 @@ urllib3==1.26.9
 uvicorn==0.17.6
     # via h2o-wave
 vega==3.6.0
-    # via -r base.in
+    # via -r prod.in
 vega-datasets==0.9.0
     # via -r dev.in
 watchdog==2.1.9

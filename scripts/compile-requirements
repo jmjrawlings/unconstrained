@@ -2,6 +2,6 @@
 
 # Recompile project requirements
 cd requirements
-pip-compile base.in
+pip-compile prod.in
 pip-compile test.in
 pip-compile dev.in

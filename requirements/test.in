@@ -1,4 +1,4 @@
--r base.in
+-r prod.in
 pytest
 pytest-asyncio
 pytest-watch

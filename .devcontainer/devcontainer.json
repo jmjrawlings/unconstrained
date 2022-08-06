@@ -19,10 +19,6 @@
         // Add the local scripts directory to PATH
         "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
     },
-        
-    "containerEnv": {
-        "DO_NOT_TRACK" : "1"
-    },
 
     // VSCode settings inside the container
     "settings": {
@@ -71,19 +67,23 @@
 		"dekkerone.minizinc",
         // Access workspace via web browser (good for .html)
         "ritwickdey.liveserver",
-        // CueLang syntax highlighting
-        "nickgo.cuelang",
-        // Markdown emoji previews
-        "bierner.markdown-emoji",
         // Browse SQLite databases
-        "alexcvzz.vscode-sqlite"
+        "alexcvzz.vscode-sqlite",
+        // Mermaid JS support
+        "bierner.markdown-mermaid",
+        // Dagger LSP
+        "Dagger.dagger"
 	],
         
     "runArgs": [ 
-        "--init"
+        "--init",
+        "--hostname", "host"
     ],
 
+    "containerEnv": {
+        "DO_NOT_TRACK" : "1"
+    },
+    
     "postAttachCommand":
         "sudo chmod +x /workspaces/unconstrained/scripts/*"
-    
 }
