@@ -3,7 +3,7 @@
 # ********************************************************
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
-ARG MINIZINC_VERSION=2.6.4
+ARG MINIZINC_VERSION=2.6.0
 ARG ORTOOLS_VERSION=9.3
 ARG ORTOOLS_BUILD=10502
 ARG DAGGER_VERSION=0.2.28
@@ -208,8 +208,7 @@ WORKDIR $APP_PATH
 
 # Install Python testing packages
 COPY ./requirements/test.txt requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir' \
-    && rm requirements.txt
+RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
 
 # Copy source code
 COPY ./unconstrained ./unconstrained 
