@@ -1,15 +1,16 @@
 # ********************************************************
 # * Key Arguments
 # ********************************************************
-ARG MINIZINC_VERSION=2.6.2
-ARG MINIZINC_HOME=/usr/local/share/minizinc
-ARG ORTOOLS_VERSION=9.3
-ARG ORTOOLS_BUILD=10502
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
+ARG MINIZINC_VERSION=2.6.0
+ARG ORTOOLS_VERSION=9.3
+ARG ORTOOLS_BUILD=10502
+ARG DAGGER_VERSION=0.2.28
+
 ARG PYTHON_VENV=/opt/venv
-ARG DAGGER_VERSION=0.2.12
-ARG DEBIAN_FRONTEND=noninteractive
+ARG MINIZINC_HOME=/usr/local/share/minizinc
+
 
 # ********************************************************
 # * MiniZinc Builder
@@ -22,20 +23,21 @@ ARG DEBIAN_FRONTEND=noninteractive
 # ********************************************************
 FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 
+ARG UBUNTU_VERSION
 ARG MINIZINC_HOME
 ARG ORTOOLS_VERSION
 ARG ORTOOLS_BUILD
 ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
-ARG UBUNTU_VERSION
 ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v$ORTOOLS_VERSION.$ORTOOLS_BUILD
 ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v$ORTOOLS_VERSION/$ORTOOLS_TAR_NAME.tar.gz
 ARG ORTOOLS_MSC=$MINIZINC_HOME/solvers/ortools.msc
-ARG DEBIAN_FRONTEND
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
-        wget
+        wget \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
     
 # Install OR-Tools into MiniZinc directory
 RUN mkdir $ORTOOLS_HOME && \
@@ -69,30 +71,30 @@ RUN echo '{ \n\
 # dependencies
 # ********************************************************
 
-ARG UBUNTU_VERSION
-FROM ubuntu:$UBUNTU_VERSION as builder
+FROM ubuntu:$UBUNTU_VERSION as base
 
 ARG PYTHON_VENV
 ARG PYTHON_VERSION
-ARG DEBIAN_FRONTEND
+ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHON_NAME=python$PYTHON_VERSION
 ENV VIRTUAL_ENV=$PYTHON_VENV
 
 # Install Python3 + helpful packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        $PYTHON_NAME \
+        $PYTHON_NAME-dev \
+        $PYTHON_NAME-venv \
         apt-transport-https \
         build-essential \
         ca-certificates \
         curl \
         gnupg2 \ 
-        $PYTHON_NAME \
-        $PYTHON_NAME-dev \
-        $PYTHON_NAME-venv \
         python3-pip \
         python3-wheel \
         sqlite3 \
         sudo \
-        wget
+        wget \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy MiniZinc + ORTools from the build layer
 ARG MINIZINC_HOME
@@ -102,16 +104,11 @@ COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 # Create a python virtual environment
 RUN $PYTHON_NAME -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# RUN echo "$VIRTUAL_ENV/bin:$PATH" >> /etc/environment
+RUN pip install pip-tools
 
-# Install Python packages
-ADD ./requirements/base.txt /opt/requirements.txt
-RUN pip install pip-tools && \
-    pip-sync /opt/requirements.txt && \
-    rm /opt/requirements.txt
 
 # ********************************************************
-# * Development
+# * Dev 
 # 
 # This layer contains everything needed for a fully 
 # featured development environment.  It is intended to 
@@ -121,7 +118,9 @@ RUN pip install pip-tools && \
 # See https://code.visualstudio.com/docs/remote/containers
 # ********************************************************
 
-FROM builder as devcontainer
+FROM base as dev
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -134,7 +133,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         lsb-release \
         micro \
         openssh-client \
-        zsh
+        zsh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
@@ -149,8 +149,8 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 
 # Install Dagger - TODO: pin version
 ARG DAGGER_VERSION
-RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh
-RUN mv ./bin/dagger /usr/local/bin
+RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
+    && mv ./bin/dagger /usr/local/bin
 
 # Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root/.p10k.zsh
@@ -164,18 +164,18 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     && sudo usermod --shell $(which zsh) root
 
 # Install Dev Python packages
-COPY ./requirements/dev.txt /opt/requirements.txt
-RUN pip-sync /opt/requirements.txt \
-    && rm /opt/requirements.txt
+COPY ./requirements/dev.txt requirements.txt
+RUN pip-sync requirements.txt \
+    && rm requirements.txt
 
 # ********************************************************
-# * Testing
+# * Test
 #
-# This layer copies the source code and installs only 
-# the dependencies necessary to run tests.
+# This layer contains only the code and dependencies 
+# needed to run tests.
 # ********************************************************
 
-FROM builder as test
+FROM base as test
 
 ARG APP_PATH="/unconstrained"
 
@@ -183,10 +183,33 @@ WORKDIR $APP_PATH
 
 # Install Python testing packages
 COPY ./requirements/test.txt requirements.txt
-RUN pip-sync requirements.txt
+RUN pip-sync requirements.txt --pip-args '--no-cache-dir' \
+    && rm requirements.txt
 
 # Copy source code
 COPY ./tests ./tests
 COPY ./unconstrained ./unconstrained 
 COPY ./examples ./examples
 COPY ./pytest.ini .
+
+
+# ********************************************************
+# * Prod
+#
+# This target contains only the source code and required
+# packages.
+# ********************************************************
+
+FROM base as prod
+
+ARG APP_PATH="/unconstrained"
+
+WORKDIR $APP_PATH
+
+# Install Python testing packages
+COPY ./requirements/test.txt requirements.txt
+RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
+
+# Copy source code
+COPY ./unconstrained ./unconstrained 
+COPY ./examples ./examples

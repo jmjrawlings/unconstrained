@@ -1,6 +1,5 @@
 from unconstrained import *
 from examples import queens
-from pytest import fixture
 
 async def test_solve(minizinc_options):
         

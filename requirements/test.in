@@ -1,5 +1,4 @@
--r base.in
--c base.txt
+-r prod.in
 pytest
-pytest-watch
 pytest-asyncio
+pytest-watch

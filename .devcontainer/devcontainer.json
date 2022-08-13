@@ -5,23 +5,19 @@
     "build":{
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "devcontainer"
+        "target": "dev"
     },
 
     "mounts":[
-        // Mount the host docker engine
+        // [Optional] Mount the hosts docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
         "source=unconstrained-vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
     ],
-            
+                
     "remoteEnv": {
         // Add the local scripts directory to PATH
         "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
-    },
-    
-    "containerEnv": {
-        "DO_NOT_TRACK" : "1"
     },
 
     // VSCode settings inside the container
@@ -71,17 +67,23 @@
 		"dekkerone.minizinc",
         // Access workspace via web browser (good for .html)
         "ritwickdey.liveserver",
-        // CueLang syntax highlighting
-        "nickgo.cuelang",
-        // Markdown emoji previews
-        "bierner.markdown-emoji",
         // Browse SQLite databases
-        "alexcvzz.vscode-sqlite"
+        "alexcvzz.vscode-sqlite",
+        // Mermaid JS support
+        "bierner.markdown-mermaid",
+        // Dagger LSP
+        "Dagger.dagger"
 	],
-    
+        
     "runArgs": [ 
         "--init",
-        "--net", "host"
-    ]
+        "--hostname", "host"
+    ],
+
+    "containerEnv": {
+        "DO_NOT_TRACK" : "1"
+    },
     
+    "postAttachCommand":
+        "sudo chmod +x /workspaces/unconstrained/scripts/*"
 }

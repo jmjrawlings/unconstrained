@@ -51,9 +51,14 @@ dagger.#Plan & {
                 
         // Build the development docker image
         build_dev_image: #build_dockerfile_target & {
-            name: "devcontainer" 
+            name: "dev" 
         }
-                                                
+
+        // Build the production docker image
+        build_prod_image: #build_dockerfile_target & {
+            name: "prod" 
+        }
+                                                        
         // Load the test image into the hosts docker engine for debugging
         load_test_image: #load_docker_image & {
             image: build_test_image
@@ -68,26 +73,6 @@ dagger.#Plan & {
 
         // Run the test suite
         test: {
-            
-            // Test Python is installed
-            test_python_installed: docker.#Run & 
-                {
-                input : build_test_image
-                command: {
-                    name: "python3"
-                    args: ["--version"]
-                }
-            }
-
-            // Test MiniZinc is installed
-            test_minizinc_installed: docker.#Run & 
-                {
-                input : build_test_image
-                command: {
-                    name: "minizinc"
-                    args: ["--version"]
-                }
-                }
 
             // Run PyTest suite
             pytest: docker.#Run & 
