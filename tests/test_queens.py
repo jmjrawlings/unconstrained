@@ -25,4 +25,4 @@ async def test_solve(minizinc_options):
         height=400,
         title=scenario.name
         )
-    assert result.status == mz.FEASIBLE
+    assert result.status == mz.ALL_SOLUTIONS

@@ -1,8 +1,6 @@
 from unconstrained import *
 from pytest import mark, fixture
 
-from unconstrained.minizinc.minizinc import GECODE
-
 
 @fixture
 def minizinc_solver() -> mz.Solver:
@@ -12,6 +10,7 @@ def minizinc_solver() -> mz.Solver:
 @fixture
 def minizinc_threads() -> int:
     return 8
+
 
 @fixture
 def minizinc_driver() -> mz.Driver:
@@ -23,22 +22,19 @@ def minizinc_options(minizinc_solver, minizinc_threads):
     return mz.SolveOptions(
         solver_id = minizinc_solver.id,
         threads = minizinc_threads
-    )
+   )
 
 
 async def test_solve_satisfy(minizinc_options):
-    result = await mz.best_solution(
+    result = await mz.satisfy(
         """
-        var 1..10: a;
         var bool: b;
-        constraint a = 1;
-        constraint b = true;
+        constraint b;
         """,
         minizinc_options,
         name='test satisfy'
         )
     assert result.status == mz.FEASIBLE, result.error
-    assert result['a']
     assert result['b']
 
 
@@ -75,13 +71,13 @@ async def test_syntax_error(minizinc_options):
 async def test_solve_all_solutions(minizinc_options : mz.SolveOptions):
     minizinc_options.solver_id = mz.GECODE
     
-    result, solutions = await mz.all_solutions(
+    solutions, result = await mz.all_solutions(
         "var {1,2,3}: a;",
         minizinc_options,
         name='test all'
     )
         
-    assert result.status == mz.FEASIBLE, result.error
+    assert result.status == mz.ALL_SOLUTIONS, result.error
     assert len(solutions) == 3
 
 

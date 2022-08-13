@@ -21,6 +21,7 @@ from .minizinc import (
     OPTIMAL,
     THRESHOLD,
     UNSATISFIABLE,
+    ALL_SOLUTIONS,
     TIMEOUT,
     ERROR,
     UNKNOWN,

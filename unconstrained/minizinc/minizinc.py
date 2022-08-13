@@ -255,7 +255,7 @@ class Result:
     method           : Method          = enum_field(Method, SATISFY)
     status           : Status          = enum_field(Status, Status.FEASIBLE)
     error            : str             = string_field()
-    compile_time     : Duration        = duration_field()
+    flatten_time     : Duration        = duration_field()
     start_time       : DateTime        = datetime_field()
     end_time         : DateTime        = datetime_field()
     statistics       : Statistics      = dict_field()
@@ -266,8 +266,7 @@ class Result:
     relative_gap     : Optional[float] = float_field(optional=True)
     absolute_delta   : Optional[int]   = int_field(optional=True)
     relative_delta   : Optional[float] = int_field(optional=True)
-    
-    solution : Dict[str, Any] = {}
+    variables        : Dict[str, Any]  = attr.ib(factory=dict)
         
     @property
     def solve_time(self) -> Period:
@@ -303,10 +302,10 @@ class Result:
         result.get_value('a_2d_array', 4, 10)
         """
         
-        if name not in self.solution:
+        if name not in self.variables:
             raise KeyError(f'Solution does not contain a value for "{name}"')
 
-        value = self.solution[name]
+        value = self.variables[name]
         for i in indices:
             value = value[i]
 
@@ -411,9 +410,9 @@ async def solve(
     previous = result
                         
     try:
-        solution : MzResult
-                
-        async for solution in instance.solutions(
+        mz_result : MzResult
+                        
+        async for mz_result in instance.solutions(
             timeout = options.time_limit,
             optimisation_level = options.flatten_options.value,
             free_search = '-f' in solver.stdFlags and options.free_search,
@@ -422,7 +421,7 @@ async def solve(
         ):
         
             statistics = previous.statistics.copy()
-            statistics.update(solution.statistics) #type:ignore
+            statistics.update(mz_result.statistics) #type:ignore
                                                         
             result = Result(
                 name            = name,
@@ -430,45 +429,43 @@ async def solve(
                 start_time      = previous.start_time,
                 end_time        = now(),
                 statistics      = statistics,
-                compile_time    = previous.compile_time,
+                flatten_time    = previous.flatten_time,
                 method          = previous.method,
                 model_string    = previous.model_string,
                 model_file      = previous.model_file,
                 status          = Status.FEASIBLE,
-                objective       = previous.objective,
-                objective_bound = previous.objective_bound,
-                relative_delta  = previous.relative_delta,
-                relative_gap    = previous.relative_gap,
-                absolute_delta  = previous.absolute_delta,
-                absolute_gap    = previous.absolute_gap,
             )
-
+                        
             if 'flatTime' in statistics:
-                flat_time = statistics['flatTime']
-                result.compile_time = to_duration(flat_time)
-
-            result.solution.clear()
+                flat_time = statistics.pop('flatTime')
+                result.flatten_time = to_duration(flat_time)
                                                                                                
             # No solution - MiniZinc has terminated
-            if solution.solution is None:
+            if mz_result.solution is None:
                                                 
-                if solution.status == MzStatus.OPTIMAL_SOLUTION:
-                    solution.solution = previous.solution.copy()
+                if mz_result.status == MzStatus.OPTIMAL_SOLUTION:
+                    result.variables = previous.variables.copy()
+                    result.objective = previous.objective
+                    result.objective_bound = previous.objective
+                    result.absolute_delta = previous.absolute_gap
+                    result.relative_delta = previous.absolute_delta
+                    result.absolute_gap = 0
+                    result.relative_gap = 0.0
                     status = OPTIMAL
 
-                elif solution.status == MzStatus.UNSATISFIABLE:
+                elif mz_result.status == MzStatus.UNSATISFIABLE:
                     status = UNSATISFIABLE
 
-                elif solution.status == MzStatus.SATISFIED:
+                elif mz_result.status == MzStatus.SATISFIED:
                     status = FEASIBLE
 
-                elif solution.status == MzStatus.UNBOUNDED:
+                elif mz_result.status == MzStatus.UNBOUNDED:
                     status = UNBOUNDED
 
-                elif solution.status == MzStatus.ALL_SOLUTIONS:
+                elif mz_result.status == MzStatus.ALL_SOLUTIONS:
                     status = ALL_SOLUTIONS
 
-                elif solution.status == MzStatus.UNKNOWN:
+                elif mz_result.status == MzStatus.UNKNOWN:
                     if result.solve_duration > options.time_limit:
                         status = TIMEOUT
                     else:
@@ -480,13 +477,13 @@ async def solve(
                 result.status = status
                 
                 for key,value in statistics.items():
-                    log.trace(f'"{name}" {key} = {value}')
+                    log.debug(f'"{name}" {key} = {value}')
 
                 log.log(
                     logging.INFO if status.has_solution else logging.ERROR,
                     f'"{name}" returned "{status.name}" after {result.elapsed}'
                 )
-                break
+                continue
             
             # An intermediate solution has been given
             objective : Optional[int]   = None
@@ -497,12 +494,12 @@ async def solve(
             rel_delta : Optional[float] = None
 
             # Extract objective
-            if (objective := statistics.get('objective')) is not None: # type:ignore
+            if (objective := statistics.pop('objective', None)) is not None: # type:ignore
                 result.objective = int(objective)
                 objective = result.objective
 
             # Extract objective bound
-            if (bound := statistics.get('objectiveBound')) is not None: # type:ignore
+            if (bound := statistics.pop('objectiveBound', None)) is not None: # type:ignore
                 if math.isfinite(bound):
                     result.objective_bound = int(bound)
                     bound = result.objective_bound
@@ -532,10 +529,9 @@ async def solve(
             result.relative_delta  = rel_delta
             
             # Extract solved variables
-            result.solution.clear()
             for var in variables:
-                value = solution[var]
-                result.solution[var] = value
+                value = mz_result[var]
+                result.variables[var] = value
 
             if rel_gap is not None:
                 log.debug(f'"{name}" solution {result.iteration} has objective {result.objective} and gap {rel_gap:.2%} after {result.elapsed}')
@@ -543,7 +539,9 @@ async def solve(
                 log.debug(f'"{name}" solution {result.iteration} has objective {result.objective} after {result.elapsed}')
             else:
                 log.debug(f'"{name}" solution {result.iteration} found after {result.elapsed}')
-                                                                                                        
+
+            for key,value in statistics.items():
+                log.debug(f'"{name}" {key} = {value}')
             yield result
             previous = result
 
@@ -551,8 +549,8 @@ async def solve(
         result.error = e.args[0]
         result.status = Status.ERROR
         log.error(f'{type(e).__name__}: {result.error}')
-        
-    yield result
+
+    yield result            
     return
 
 
@@ -574,21 +572,25 @@ async def satisfy(model : str, options : SolveOptions, parameters=None, **kwargs
     """
     Solve the model and return the first satisfactory solution
     """
-    result = await best_solution(model, options, all_solutions=False, parameters=parameters, **kwargs)
+    results = []
+    async for result in solve(model, options, parameters=parameters, all_solutions=False, **kwargs):
+        results.append(result)
+
+    result = results[0]
     return result
 
 
-async def all_solutions(model : str, options : SolveOptions, parameters=None, **kwargs) -> Tuple[Result, List[Result]]:
+async def all_solutions(model : str, options : SolveOptions, parameters=None, **kwargs) -> Tuple[List[Result], Result]:
     """
     Solve the model returning all satisfactory solutions
     """
-    completed = Result()
-    results = []
-                                        
+    last_result = Result()
+    solutions = []
+                                            
     async for result in solve(model, options=options, parameters=parameters, all_solutions=True, **kwargs):
         if result.status == FEASIBLE:
-            results.append(result)
+            solutions.append(result)
         else:
-            completed = result
+            last_result = result
 
-    return completed, results
+    return solutions, last_result
