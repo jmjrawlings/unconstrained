@@ -60,51 +60,6 @@ ATTRS = dict(
 )
 
 
-class HasId:
-    """
-    Object has a unique identifier for
-    equality and sorting
-    """
-                    
-    def get_id(self):
-        return self.id
-
-    def get_sort_key(self):
-        return self.get_id()
-
-    def __eq__(self, other):
-
-        if not isinstance(other, type(self)):
-            return False
-
-        if not hasattr(other, "get_id"):
-            return False
-
-        a_id = self.get_id()
-        b_id = other.get_id()
-        return a_id == b_id
-
-    def __hash__(self) -> int:
-        return hash(self.get_id())
-
-    def __str__(self):
-        return str(self.get_id())
-
-    def __repr__(self):
-        return f"<{self!s}>"
-
-    def __lt__(self, other):
-        return self.get_sort_key() < other.get_sort_key()
-
-    def __le__(self, other):
-        return self.get_sort_key() <= other.get_sort_key()
-
-    def __gt__(self, other):
-        return self.get_sort_key() > other.get_sort_key()
-
-    def __ge__(self, other):
-        return self.get_sort_key() >= other.get_sort_key()
-
 
 def to_int(value: Any = None) -> int:
     if value is None:
@@ -468,5 +423,24 @@ def enumerate1(x):
     for i,y in enumerate(x):
         yield i+1, y
 
+
 def range1(x):
     return range(1, x+1)
+
+
+def to_list(*args, ignore_types=[str]):
+    
+    def unpack(*args):
+        for arg in args:
+            if type(arg) in ignore_types:
+                yield arg
+                continue
+
+            try:
+                xs = list(arg)
+                yield from unpack(*xs)
+            except:
+                yield arg
+
+    flattened = list(unpack(*args))
+    return flattened

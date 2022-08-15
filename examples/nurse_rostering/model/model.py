@@ -51,13 +51,9 @@ class Request(Model, table=True):
     nurse : Nurse       = db.relation(Nurse.requests)
 
 
-def create_scenario(
-        num_days=3,
-        num_nurses=4,
-        num_shifts=3) -> Scenario:
-
+def create_scenario(num_days=3, num_nurses=4, num_shifts=3) -> Scenario:
     from itertools import cycle
-    
+        
     scenario = Scenario()
 
     for i in range1(num_nurses):

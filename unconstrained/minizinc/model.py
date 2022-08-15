@@ -1,5 +1,4 @@
-from unconstrained.prelude.tlist import to_untyped_list
-from ..prelude import to_list, enumerate1
+from ..prelude import *
 from typing import List, Set, Union, Literal
 from textwrap import indent, dedent
 
@@ -321,36 +320,35 @@ class ModelBuilder:
         self.string = str(text)
 
 
-    def add_binop(self, name, left, right, op, **kwargs):
+    def add_binop(self, left, right, op, **kwargs):
         return self.add_constraint(
-            name, 
             f"{mz_value(left)} {op} {mz_value(right)}",
             **kwargs
         )
 
 
-    def add_eq(self, name, left, right, **kwargs):
-        return self.add_binop(name, left, right, "=", **kwargs)
+    def add_eq(self, left, right, **kwargs):
+        return self.add_binop( left, right, "=", **kwargs)
         
 
-    def add_leq(self, name, left, right, **kwargs):
-        return self.add_binop(name, left, right, "<=", **kwargs)
+    def add_leq(self, left, right, **kwargs):
+        return self.add_binop(left, right, "<=", **kwargs)
 
 
-    def add_geq(self, name, left, right, **kwargs):
-        return self.add_binop(name, left, right, ">=", **kwargs)
+    def add_geq(self, left, right, **kwargs):
+        return self.add_binop(left, right, ">=", **kwargs)
 
 
-    def add_in(self, name, left, right, **kwargs):
-        return self.add_binop(name, left, right, "in", **kwargs)
+    def add_in(self, left, right, **kwargs):
+        return self.add_binop(left, right, "in", **kwargs)
 
 
-    def add_false(self, name, x, **kwargs):
-        self.add_eq(x, name, False, **kwargs)
+    def add_false(self, x, **kwargs):
+        self.add_eq(x, False, **kwargs)
 
 
-    def add_true(self, name, x, **kwargs):
-        self.add_eq(x, name, True, **kwargs)
+    def add_true(self, x, **kwargs):
+        self.add_eq(x, True, **kwargs)
 
 
     def add_multiline_comment(self, x):
@@ -364,7 +362,7 @@ class ModelBuilder:
         self.string += NEWLINE
 
 
-    def add_expression(self, text, comment="", pad=20):
+    def add_expression(self, text, comment=None, pad=20):
         expr = f"{text};"
         
         if comment:
@@ -484,7 +482,7 @@ class ModelBuilder:
             self.add_expression(root, comment=comment)
         elif not inline:
             self.add_expression(root, comment=comment)
-            self.add_eq('', name, stem)
+            self.add_eq(name, stem)
         else:
             self.add_expression(f'{root} = {stem}', comment=comment)
 
@@ -532,7 +530,7 @@ class ModelBuilder:
         return name
         
 
-    def add_constraint(self, name, expr, /, *, comment=True, pad=20, enabled=True, disabled=False):
+    def add_constraint(self, expr, /, *, name="", comment=True, pad=20, enabled=True, disabled=False):
 
         if not expr:
             return
@@ -545,7 +543,7 @@ class ModelBuilder:
 
         self.add_expression(
             f"constraint {expr}",
-            comment=name if comment else '',
+            comment=comment and name,
             pad=pad
         )
 
@@ -560,9 +558,9 @@ class ModelBuilder:
             self.add_expression(f"{left} = {mz_value(right)}")
 
 
-    def add_implies(self, left, right, comment=""):
+    def add_implies(self, left, right, **kwargs):
         op = mz_implies(left, right)
-        self.add_constraint(op, comment=comment)
+        self.add_constraint(op, **kwargs)
 
 
     def add_comment(self, text):
