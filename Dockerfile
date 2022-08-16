@@ -1,5 +1,5 @@
 # ********************************************************
-# * Key Arguments
+# Key Arguments
 # ********************************************************
 ARG UBUNTU_VERSION=20.04
 ARG PYTHON_VERSION=3.9
@@ -11,9 +11,8 @@ ARG DAGGER_VERSION=0.2.28
 ARG PYTHON_VENV=/opt/venv
 ARG MINIZINC_HOME=/usr/local/share/minizinc
 
-
 # ********************************************************
-# * MiniZinc Builder
+# MiniZinc Builder
 #
 # This layer installs MiniZinc into the $MINIZINC_HOME
 # directory which is later copied to other images.
@@ -37,7 +36,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         wget \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
     
 # Install OR-Tools into MiniZinc directory
 RUN mkdir $ORTOOLS_HOME && \
@@ -64,7 +63,7 @@ RUN echo '{ \n\
 
 
 # ********************************************************
-# * Builder
+# Base Layer
 #
 # This is the base Ubuntu layer that is built upon by other 
 # layers. It contains Python, MiniZinc, and other key 
@@ -94,7 +93,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         sqlite3 \
         sudo \
         wget \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy MiniZinc + ORTools from the build layer
 ARG MINIZINC_HOME
@@ -108,7 +107,7 @@ RUN pip install pip-tools
 
 
 # ********************************************************
-# * Dev 
+# Dev Layer
 # 
 # This layer contains everything needed for a fully 
 # featured development environment.  It is intended to 
@@ -134,7 +133,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         micro \
         openssh-client \
         zsh \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
@@ -169,7 +168,7 @@ RUN pip-sync requirements.txt \
     && rm requirements.txt
 
 # ********************************************************
-# * Test
+# Test Layer
 #
 # This layer contains only the code and dependencies 
 # needed to run tests.
@@ -182,9 +181,8 @@ ARG APP_PATH="/unconstrained"
 WORKDIR $APP_PATH
 
 # Install Python testing packages
-COPY ./requirements/test.txt requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir' \
-    && rm requirements.txt
+COPY ./requirements/test.txt ./requirements.txt
+RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
 
 # Copy source code
 COPY ./tests ./tests
@@ -192,9 +190,11 @@ COPY ./unconstrained ./unconstrained
 COPY ./examples ./examples
 COPY ./pytest.ini .
 
+# Run pytest on container run
+CMD pytest
 
 # ********************************************************
-# * Prod
+# Prod Layer
 #
 # This target contains only the source code and required
 # packages.
@@ -207,7 +207,7 @@ ARG APP_PATH="/unconstrained"
 WORKDIR $APP_PATH
 
 # Install Python testing packages
-COPY ./requirements/test.txt requirements.txt
+COPY ./requirements/test.txt ./requirements.txt
 RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
 
 # Copy source code

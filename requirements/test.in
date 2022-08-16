@@ -1,4 +1,5 @@
 -r prod.in
+vega-datasets
 pytest
 pytest-asyncio
 pytest-watch

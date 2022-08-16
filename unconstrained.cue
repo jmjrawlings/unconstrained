@@ -75,14 +75,9 @@ dagger.#Plan & {
         test: {
 
             // Run PyTest suite
-            pytest: docker.#Run & 
-                {
+            pytest: docker.#Run & {
                 input: build_test_image
-                command: {
-                    name: "pytest"
                 }
-            }
         }
     }
-
 }

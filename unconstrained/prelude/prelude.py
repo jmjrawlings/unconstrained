@@ -1,12 +1,14 @@
 import datetime as dt
 import json
+import logging
 from enum import Enum
 from pathlib import Path
 from typing import (Any, AsyncGenerator, Callable, Dict, List, Optional, Set,
                     Type, TypeVar, Union)
 from uuid import uuid4
+
 import attr
-import cattr
+import pandas as pd
 import pendulum as pn
 from pendulum import date, datetime, duration, now, period, today
 from pendulum.date import Date
@@ -14,10 +16,8 @@ from pendulum.datetime import DateTime
 from pendulum.duration import Duration
 from pendulum.period import Period
 from pendulum.tz.timezone import UTC, Timezone
-import logging
-from rich.logging import RichHandler
 from rich import print
-import pandas as pd
+from rich.logging import RichHandler
 
 DF = pd.DataFrame
 T = TypeVar("T")
@@ -26,10 +26,8 @@ E = TypeVar("E", bound=Enum)
 def uuid():
     return str(uuid4())
 
-converter = cattr.GenConverter() 
-unstructure = converter.unstructure
-
 from loguru import logger as log
+
 log.remove()
 
 log.add(

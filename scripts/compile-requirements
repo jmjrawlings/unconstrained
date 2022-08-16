@@ -2,6 +2,6 @@
 
 # Recompile project requirements
 cd requirements
-pip-compile prod.in
-pip-compile test.in
-pip-compile dev.in
+pip-compile prod.in -o prod.txt
+pip-compile test.in -o test.txt
+pip-compile dev.in -o dev.txt

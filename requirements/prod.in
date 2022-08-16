@@ -1,12 +1,11 @@
 altair
 attrs
-cattrs
-h2o-wave
 loguru
 minizinc
 ortools
-palettable
 pendulum
 rich
-sqlmodel
+sqlmodel==0.0.6
+sqlalchemy==1.4.35
 vega
+jupyter-book
