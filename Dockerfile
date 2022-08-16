@@ -6,7 +6,7 @@ ARG PYTHON_VERSION=3.9
 ARG MINIZINC_VERSION=2.6.0
 ARG ORTOOLS_VERSION=9.3
 ARG ORTOOLS_BUILD=10502
-ARG DAGGER_VERSION=0.2.28
+ARG DAGGER_VERSION=0.2.29
 
 ARG PYTHON_VENV=/opt/venv
 ARG MINIZINC_HOME=/usr/local/share/minizinc
@@ -149,7 +149,8 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 # Install Dagger - TODO: pin version
 ARG DAGGER_VERSION
 RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
-    && mv ./bin/dagger /usr/local/bin
+    && mv ./bin/dagger /usr/local/bin \
+    && echo $DAGGER_VERSION
 
 # Install zsh & oh-my-zsh
 COPY .devcontainer/.p10k.zsh /root/.p10k.zsh

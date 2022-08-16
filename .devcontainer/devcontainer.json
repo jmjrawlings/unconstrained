@@ -82,8 +82,5 @@
 
     "containerEnv": {
         "DO_NOT_TRACK" : "1"
-    },
-    
-    "postAttachCommand":
-        "sudo chmod +x /workspaces/unconstrained/scripts/*"
+    }
 }
