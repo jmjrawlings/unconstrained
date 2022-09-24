@@ -1,0 +1,7 @@
+-r requirements-test.in
+-c requirements-test.txt
+faker
+iminizinc
+ipywidgets
+jupyterlab
+pdbpp

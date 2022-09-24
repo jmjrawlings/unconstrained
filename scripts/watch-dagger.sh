@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Watch for changes in the Dagger CUE file and rerun
 # the given action

@@ -7,4 +7,4 @@ pendulum
 rich
 vega
 notebook
-nbdev
+sqlmodel

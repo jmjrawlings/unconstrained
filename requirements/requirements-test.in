@@ -1,4 +1,4 @@
--r prod.in
+-r requirements-prod.in
 vega-datasets
 pytest
 pytest-asyncio
