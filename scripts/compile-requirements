@@ -5,3 +5,4 @@ cd requirements
 pip-compile prod.in -o prod.txt
 pip-compile test.in -o test.txt
 pip-compile dev.in -o dev.txt
+pip-sync dev.txt
