@@ -267,12 +267,6 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Python dependencies
 COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-RUN pip install pip-tools
-
-CMD zsh
-# Install python packages
-COPY ./requirements/dev.txt requirements.txt
-RUN pip-sync requirements.txt --pip-args '--no-cache-dir'
 
 CMD zsh
 
