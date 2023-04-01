@@ -73,7 +73,9 @@
         // Mermaid JS support
         "bierner.markdown-mermaid",
         // Dagger LSP
-        "Dagger.dagger"
+        "Dagger.dagger",
+        // Quarto
+        "quarto.quarto"
 	]}},
         
     "runArgs": [ 
