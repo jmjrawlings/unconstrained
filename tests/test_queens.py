@@ -12,7 +12,7 @@ async def test_solve(minizinc_options):
         session.commit()
         session.refresh(scenario)
                  
-        async for result in queens.solve(scenario, minizinc_options, name=scenario.name):
+        async for result in queens.solve(scenario, minizinc_options, name=scenario.name, all_solutions=True):
             session.commit()
 
         session.refresh(scenario)

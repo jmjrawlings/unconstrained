@@ -4,7 +4,7 @@ from pytest import mark, fixture
 
 @fixture
 def minizinc_solver() -> mz.Solver:
-    return mz.get_solver(mz.ORTOOLS)
+    return mz.get_solver(mz.GECODE)
 
 
 @fixture
@@ -78,7 +78,7 @@ async def test_solve_all_solutions(minizinc_options : mz.SolveOptions):
     )
         
     assert result.status == mz.ALL_SOLUTIONS, result.error
-    assert len(solutions) == 3
+    assert {sol['a'] for sol in solutions} == {1,2,3}
 
 
 @mark.filterwarnings("ignore:model inconsistency")

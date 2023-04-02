@@ -6,4 +6,5 @@ ortools
 pendulum
 rich
 vega
+sqlmodel
 notebook

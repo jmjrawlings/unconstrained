@@ -9,6 +9,7 @@ from minizinc import Instance
 from minizinc import Driver
 from typing import TypedDict
 from shutil import copy
+from copy import deepcopy
 import math
 import logging
 
@@ -332,10 +333,10 @@ class Result:
 
 @attr.s(**ATTRS)
 class SolveOptions:
-    solver_id       : str           = string_field(default="or-tools")
+    solver_id       : str           = string_field(default="gecode")
     threads         : int           = int_field(default=4)
     time_limit      : Duration      = duration_field(default=dict(minutes=1))
-    flatten_options : FlattenOption= enum_field(FlattenOption, FlattenOption.SINGLE_PASS)
+    flatten_options : FlattenOption = enum_field(FlattenOption, FlattenOption.SINGLE_PASS)
     free_search     : bool          = bool_field(default=True)
     
 
@@ -434,6 +435,7 @@ async def solve(
                 model_string    = previous.model_string,
                 model_file      = previous.model_file,
                 status          = Status.FEASIBLE,
+                variables       = deepcopy(previous.variables)
             )
                         
             if 'flatTime' in statistics:
@@ -494,7 +496,7 @@ async def solve(
             rel_delta : Optional[float] = None
 
             # Extract objective
-            if (objective := statistics.pop('objective', None)) is not None: # type:ignore
+            if (objective := mz_result.objective) is not None: # type:ignore
                 result.objective = int(objective)
                 objective = result.objective
 
@@ -572,11 +574,8 @@ async def satisfy(model : str, options : SolveOptions, parameters=None, **kwargs
     """
     Solve the model and return the first satisfactory solution
     """
-    results = []
-    async for result in solve(model, options, parameters=parameters, all_solutions=False, **kwargs):
-        results.append(result)
-
-    result = results[0]
+    kwargs = kwargs | dict(all_solutions=False)
+    result = await best_solution(model, options=options, parameters=parameters, **kwargs)
     return result
 
 
@@ -586,11 +585,11 @@ async def all_solutions(model : str, options : SolveOptions, parameters=None, **
     """
     last_result = Result()
     solutions = []
-                                            
-    async for result in solve(model, options=options, parameters=parameters, all_solutions=True, **kwargs):
-        if result.status == FEASIBLE:
-            solutions.append(result)
-        else:
-            last_result = result
+    kwargs = kwargs | dict(all_solutions=True)
+        
+    async for result in solve(model, options=options, parameters=parameters, **kwargs):
+        solutions.append(result)
 
+    last_result = solutions[-1]
+    solutions = solutions[:-1]
     return solutions, last_result
