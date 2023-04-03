@@ -1,36 +1,39 @@
 # ********************************************************
 # * Key Arguments
 # ********************************************************
+ARG UBUNTU_VERSION=22.04
 ARG PYTHON_VERSION=3.10
 ARG DAGGER_VERSION=0.2.36
 ARG MINIZINC_VERSION=2.7.1
-ARG ORTOOLS_VERSION=9.5
-ARG ORTOOLS_BUILD=2237
-ARG UBUNTU_VERSION=20.04
 ARG MINIZINC_HOME=/usr/local/share/minizinc
+ARG ORTOOLS_VERSION=9.6
+ARG ORTOOLS_BUILD=2534
+ARG ORTOOLS_HOME=/opt/ortools
+ARG QUARTO_HOME=/opt/quarto
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=harken
 ARG USER_UID=1000
-ARG USER_GID=$USER_UID
+ARG USER_GID=1000
 ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
 ARG QUARTO_VERSION=1.2.475
 
+
 # ********************************************************
 # Builder
 #
-# Base image for building other dependencies
+# Common packages used to build dependencies in the correct
+# OS version
 # ********************************************************
-FROM ubuntu:$UBUNTU_VERSION as builder
+FROM ubuntu:${UBUNTU_VERSION} as builder
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \        
+        curl \
         wget \
-        curl \    
     && rm -rf /var/lib/apt/lists/*
+
 
 # ********************************************************
 # MiniZinc Builder
@@ -43,58 +46,57 @@ RUN apt-get update \
 # ********************************************************
 FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 
-ARG UBUNTU_VERSION
-ARG MINIZINC_HOME
-ARG ORTOOLS_VERSION
-ARG ORTOOLS_BUILD
-ARG ORTOOLS_HOME=$MINIZINC_HOME/ortools
-ARG ORTOOLS_TAR_NAME=or-tools_amd64_flatzinc_ubuntu-${UBUNTU_VERSION}_v$ORTOOLS_VERSION.$ORTOOLS_BUILD
-ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v$ORTOOLS_VERSION/$ORTOOLS_TAR_NAME.tar.gz
-ARG DEBIAN_FRONTEND
-
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         wget \
     && rm -rf /var/lib/apt/lists/*
-    
-# # Install OR-Tools into MiniZinc directory
-# RUN mkdir $ORTOOLS_HOME && \
-#     wget -c $ORTOOLS_TAR_URL -O - | \
-#     tar -xz -C $ORTOOLS_HOME --strip-components=1
 
-# # Register OR-Tools as a MiniZinc solver
-# RUN echo '{ \n\
-#     "id": "org.ortools.ortools",\n\
-#     "name": "OR Tools",\n\
-#     "description": "Or Tools FlatZinc executable",\n\
-#     "version": "'$ORTOOLS_VERSION/stable'",\n\
-#     "mznlib": "../ortools/share/minizinc",\n\
-#     "executable": "../ortools/bin/fzn-or-tools",\n\
-#     "tags": ["cp","int", "lcg", "or-tools"], \n\
-#     "stdFlags": ["-a", "-n", "-p", "-f", "-r", "-v", "-l", "-s"], \n\
-#     "supportsMzn": false,\n\
-#     "supportsFzn": true,\n\
-#     "needsSolns2Out": true,\n\
-#     "needsMznExecutable": false,\n\
-#     "needsStdlibDir": false,\n\
-#     "isGUIApplication": false\n\
-# }' >> $MINIZINC_HOME/solvers/ortools.msc
+# Install OR-Tools
+ARG UBUNTU_VERSION
+ARG MINIZINC_HOME
+ARG ORTOOLS_VERSION
+ARG ORTOOLS_BUILD
+ARG ORTOOLS_HOME
+ARG ORTOOLS_VERSION_BUILD=${ORTOOLS_VERSION}.${ORTOOLS_BUILD}
+ARG ORTOOLS_TAR_NAME=or-tools_amd64_ubuntu-${UBUNTU_VERSION}_cpp_v${ORTOOLS_VERSION_BUILD}.tar.gz
+ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_TAR_NAME}
+ARG ORTOOLS_DIR_NAME=or-tools_x86_64_Ubuntu-${UBUNTU_VERSION}_cpp_v${ORTOOLS_VERSION_BUILD}
+
+# Download and unpack the C++ build for this OS
+RUN wget -c ${ORTOOLS_TAR_URL} && \
+    tar -xzvf ${ORTOOLS_TAR_NAME}
+
+# Move the files to the correct location
+RUN mv ${ORTOOLS_DIR_NAME} ${ORTOOLS_HOME} && \
+    cp ${ORTOOLS_HOME}/share/minizinc/solvers/* ${MINIZINC_HOME}/solvers \
+    && cp -r ${ORTOOLS_HOME}/share/minizinc/ortools ${MINIZINC_HOME}/ortools \
+    && ln -s ${ORTOOLS_HOME}/bin/fzn-ortools /usr/local/bin/fzn-ortools
+
+# Test installation
+RUN echo "var 1..9: x; constraint x > 5; solve satisfy;" \
+  | minizinc --solver com.google.or-tools --input-from-stdin
+
 
 # ********************************************************
 # Quarto
 # ********************************************************
 FROM builder as quarto-base
 ARG QUARTO_VERSION
+ARG QUARTO_HOME
 ARG QUARTO_NAME=quarto-${QUARTO_VERSION}
 ARG QUARTO_TAR=${QUARTO_NAME}-linux-amd64.tar.gz
 
-RUN wget https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/$QUARTO_TAR \
-    && tar -C /opt -xvzf $QUARTO_TAR \
-    && mv /opt/$QUARTO_NAME /opt/quarto
+RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/$QUARTO_TAR \
+    && tar -xzf ${QUARTO_TAR} \
+    && mv ${QUARTO_NAME} ${QUARTO_HOME} && \
+    rm ${QUARTO_TAR}
+
 
 # ********************************************************
-# * Python Base
+# python-base
+#
+# Base python venv to be used by other targets
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim as python-base
 
@@ -121,20 +123,21 @@ WORKDIR ${PYTHON_VENV}
 
 
 # ********************************************************
-# * Base Layer
-# *
-# * Dependencies and environment variables used
-# * by other targets.
+# base
+# 
+# Base layer with core dependencies to be used by other
+# layers
 # ********************************************************
 FROM python:${PYTHON_VERSION}-slim as base
 
 ARG PYTHON_VENV
-ARG USER_NAME
-ARG USER_GID
-ARG USER_UID
+ARG USER_NAME=harken
+ARG USER_GID=1000
+ARG USER_UID=1000
 ARG APP_PATH
 ARG OPT_PATH
 ARG MINIZINC_HOME
+ARG ORTOOLS_HOME
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
@@ -143,7 +146,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# Add a non-root user
+# Create the user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
     && apt-get update \
@@ -151,16 +154,21 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
-# Create an assign app path
+# # Create an assign app path
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
-# Install MiniZinc + ORTools from the build layer
+# # Install MiniZinc + ORTools from the build layer
 COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
 COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
+COPY --from=minizinc-builder $ORTOOLS_HOME $ORTOOLS_HOME
+
+USER $USER_NAME     
 
 
 # ********************************************************
-# * Python Dev 
+# python-dev
+# 
+# A python venv with all of the dev dependencies installed
 # ********************************************************
 FROM python-base as python-dev
 
@@ -168,14 +176,14 @@ COPY ./requirements/requirements-dev.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 # ********************************************************
-# * Dev 
-# * 
-# * This target contains everything needed for a fully 
-# * featured development environment.  It is intended to 
-# * be used as a devcontainer via VSCode remote development
-# * extension.
-# * 
-# * See https://code.visualstudio.com/docs/remote/containers
+# dev 
+#  
+# This target contains everything needed for a fully 
+# featured development environment.  It is intended to 
+# be used as a devcontainer via VSCode remote development
+# extension.
+#  
+# See https://code.visualstudio.com/docs/remote/containers
 # ********************************************************
 FROM base as dev
 
@@ -184,7 +192,7 @@ ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
-ARG QUARTO_VERSION
+ARG QUARTO_HOME
 
 USER root
 
@@ -215,7 +223,7 @@ RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
 # Install Quarto
-COPY --from=quarto-base --chown=${USER_UID}:${USER_GID} /opt/quarto ~/quarto
+COPY --from=quarto-base --chown=${USER_UID}:${USER_GID} ${QUARTO_HOME} ${QUARTO_HOME}
 
 # Install Dagger - TODO: pin version, should be refreshed to due to ARG
 ARG DAGGER_VERSION
@@ -272,7 +280,9 @@ CMD zsh
 
 
 # ********************************************************
-# * Python Test Venv
+# python-test
+#
+# A python venv with all of the test dependencies installed
 # ********************************************************
 FROM python-base as python-test
 
@@ -280,10 +290,10 @@ COPY ./requirements/requirements-test.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
 # ********************************************************
-# * Test 
-# *
-# * This target contains python source code, testing code 
-# * and all dependencies required to run the test suite.
+# test 
+# 
+# Contains python source code, testing code, and all 
+# dependencies required to run the test suite.
 # ********************************************************
 FROM base as test
 
@@ -306,13 +316,19 @@ COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_
 CMD pytest
 
 # ********************************************************
-# * Python Prod 
+# python-prod
+#
+# A python venv with all of the prod dependencies installed
 # ********************************************************
 FROM python-base as python-prod
 
 COPY ./requirements/requirements-prod.txt ./requirements.txt
 RUN pip-sync ./requirements.txt && rm ./requirements.txt
 
+# ********************************************************
+# prod
+#
+# Contains source code and production dependencies ony
 # ********************************************************
 FROM base as prod
 
