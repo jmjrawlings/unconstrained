@@ -42,23 +42,6 @@ log.add(
     format='{message}'
     )
 
-
-# Keyword arguments to ATTRS classes we will use throughout
-ATTRS = dict(
-    # Only allow keyword arguments in constructors
-    kw_only=True,
-    # Do not generate a __repr__ method
-    repr=False,
-    # Do not generate an __eq__ method
-    eq=False,
-    # Do not generate a __hash__ method
-    hash=False,
-    # Do not generate a __str__ method
-    str=False
-)
-
-
-
 def to_int(value: Any = None) -> int:
     if value is None:
         return 0

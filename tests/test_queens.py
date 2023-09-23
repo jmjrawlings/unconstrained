@@ -4,19 +4,12 @@ from examples import queens
 async def test_solve(minizinc_options):
         
     result = mz.Result()
-    engine = db.create_engine(queens.Model)
                         
-    with db.session(engine) as session:
-        scenario = queens.create_scenario(n=5)
-        session.add(scenario)
-        session.commit()
-        session.refresh(scenario)
-                 
-        async for result in queens.solve(scenario, minizinc_options, name=scenario.name, all_solutions=True):
-            session.commit()
+    scenario = queens.create_scenario(n=5)
+    async for result in queens.solve(scenario, minizinc_options, name=scenario.name, all_solutions=True):
+        pass
 
-        session.refresh(scenario)
-        chart = queens.plot(scenario)
+    chart = queens.plot(scenario)
 
     ch.save(
         chart, 

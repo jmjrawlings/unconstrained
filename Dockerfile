@@ -1,15 +1,14 @@
 # ********************************************************
-# * Key Arguments
+# Key Arguments
 # ********************************************************
-ARG UBUNTU_VERSION=22.04
-ARG PYTHON_VERSION=3.10
-ARG DAGGER_VERSION=0.2.36
-ARG MINIZINC_VERSION=2.7.1
+ARG UBUNTU_VERSION=23.04
+ARG PYTHON_VERSION=3.11
+ARG DAGGER_VERSION=0.6.2
+ARG MINIZINC_VERSION=2.7.6
 ARG MINIZINC_HOME=/usr/local/share/minizinc
-ARG ORTOOLS_VERSION=9.6
-ARG ORTOOLS_BUILD=2534
+ARG ORTOOLS_VERSION=9.7
+ARG ORTOOLS_BUILD=2996
 ARG ORTOOLS_HOME=/opt/ortools
-ARG QUARTO_HOME=/opt/quarto
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=harken
@@ -17,23 +16,6 @@ ARG USER_UID=1000
 ARG USER_GID=1000
 ARG OPT_PATH=/opt
 ARG DEBIAN_FRONTEND=noninteractive
-ARG QUARTO_VERSION=1.2.475
-
-
-# ********************************************************
-# Builder
-#
-# Common packages used to build dependencies in the correct
-# OS version
-# ********************************************************
-FROM ubuntu:${UBUNTU_VERSION} as builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \        
-        curl \
-        wget \
-    && rm -rf /var/lib/apt/lists/*
-
 
 # ********************************************************
 # MiniZinc Builder
@@ -48,8 +30,8 @@ FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
 
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        wget \
+    ca-certificates \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Install OR-Tools
@@ -75,30 +57,15 @@ RUN mv ${ORTOOLS_DIR_NAME} ${ORTOOLS_HOME} && \
 
 # Test installation
 RUN echo "var 1..9: x; constraint x > 5; solve satisfy;" \
-  | minizinc --solver com.google.or-tools --input-from-stdin
-
-
-# ********************************************************
-# Quarto
-# ********************************************************
-FROM builder as quarto-base
-ARG QUARTO_VERSION
-ARG QUARTO_HOME
-ARG QUARTO_NAME=quarto-${QUARTO_VERSION}
-ARG QUARTO_TAR=${QUARTO_NAME}-linux-amd64.tar.gz
-
-RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v$QUARTO_VERSION/$QUARTO_TAR \
-    && tar -xzf ${QUARTO_TAR} \
-    && mv ${QUARTO_NAME} ${QUARTO_HOME} && \
-    rm ${QUARTO_TAR}
+    | minizinc --solver com.google.or-tools --input-from-stdin
 
 
 # ********************************************************
 # python-base
 #
-# Base python venv to be used by other targets
+# Base python used to install packages
 # ********************************************************
-FROM python:${PYTHON_VERSION}-slim as python-base
+FROM python:${PYTHON_VERSION} as python-base
 
 ARG PYTHON_VENV
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -106,6 +73,7 @@ ENV PIP_NO_CACHE_DIR=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
+
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Create the python virtual environment
@@ -114,13 +82,10 @@ RUN python -m venv ${PYTHON_VENV}
 # Install build dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install pip-tools
-
-WORKDIR ${PYTHON_VENV}
-
 
 # ********************************************************
 # base
@@ -146,7 +111,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV VIRTUAL_ENV=$PYTHON_VENV
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
-# Create the user
+# Create our non-root user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
     && apt-get update \
@@ -154,16 +119,12 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
-# # Create an assign app path
-RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
-
-# # Install MiniZinc + ORTools from the build layer
+# Install MiniZinc + ORTools from the build layer
 COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
 COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 COPY --from=minizinc-builder $ORTOOLS_HOME $ORTOOLS_HOME
 
 USER $USER_NAME     
-
 
 # ********************************************************
 # python-dev
@@ -173,7 +134,7 @@ USER $USER_NAME
 FROM python-base as python-dev
 
 COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
+RUN pip-sync ./requirements.txt
 
 # ********************************************************
 # dev 
@@ -192,25 +153,26 @@ ARG USER_NAME
 ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
-ARG QUARTO_HOME
 
 USER root
 
 # Install core packages
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl \
-        gnupg2 \
-        locales \
-        lsb-release \
-        wget \
+    && apt-get install -y\
+    build-essential \
+    curl \
+    ca-certificates \
+    gnupg2 \
+    locales \
+    lsb-release \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update && apt-get install -y --no-install-recommends \
-        docker-ce-cli \
+    docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker Compose
@@ -222,14 +184,10 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
 
-# Install Quarto
-COPY --from=quarto-base --chown=${USER_UID}:${USER_GID} ${QUARTO_HOME} ${QUARTO_HOME}
-
-# Install Dagger - TODO: pin version, should be refreshed to due to ARG
+# Install Dagger
 ARG DAGGER_VERSION
-RUN curl -sfL https://releases.dagger.io/dagger/install.sh | sh \
-    && mv ./bin/dagger /usr/local/bin \
-    && echo ${DAGGER_VERSION}
+RUN cd /usr/local \
+    && curl -L https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${DAGGER_VERSION} sh
 
 # Install Github CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -239,25 +197,23 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
     && sudo apt install gh -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Install D2 lang
+RUN curl -fsSL https://d2lang.com/install.sh | sh -s --
+
 # Install Developer packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        autojump \
-        fonts-powerline \
-        openssh-client \
-        micro \
-        less \
-        inotify-tools \
-        htop \                                                  
-        git \    
-        tree \
-        zsh \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install gum.sh
-RUN echo 'deb [trusted=yes] https://repo.charm.sh/apt/ /' | tee /etc/apt/sources.list.d/charm.list \
-    && apt-get update \
-    && apt-get install -y gum \
+    autojump \
+    entr \
+    fonts-powerline \
+    openssh-client \
+    micro \
+    less \
+    inotify-tools \
+    htop \                                                  
+    git \    
+    tree \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # Install zsh & oh-my-zsh
@@ -287,7 +243,7 @@ CMD zsh
 FROM python-base as python-test
 
 COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
+RUN pip-sync ./requirements.txt
 
 # ********************************************************
 # test 
@@ -302,8 +258,8 @@ ARG USER_NAME
 ARG USER_GID
 ARG USER_UID
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Create an assign app path
+RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
@@ -312,6 +268,7 @@ COPY ./tests ./tests
 COPY ./pytest.ini .
 
 COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
+
 
 CMD pytest
 
@@ -323,7 +280,7 @@ CMD pytest
 FROM python-base as python-prod
 
 COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt && rm ./requirements.txt
+RUN pip-sync ./requirements.txt
 
 # ********************************************************
 # prod
@@ -340,8 +297,10 @@ ARG USER_UID
 ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
+# Create an assign app path
+RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
+
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
-COPY ./src ./src
 
 COPY --from=python-prod --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}

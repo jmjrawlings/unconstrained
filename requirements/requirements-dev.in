@@ -1,4 +1,3 @@
 -r requirements-test.in
-ipywidgets
-jupyterlab
+ipython
 dagger-io
