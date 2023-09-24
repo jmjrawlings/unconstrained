@@ -3,7 +3,7 @@
 # ********************************************************
 ARG UBUNTU_VERSION=23.04
 ARG PYTHON_VERSION=3.11
-ARG DAGGER_VERSION=0.6.2
+ARG DAGGER_VERSION=0.8.7
 ARG MINIZINC_VERSION=2.7.6
 ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG ORTOOLS_VERSION=9.7
@@ -171,9 +171,13 @@ RUN apt-get update \
 # Install Docker CE CLI
 RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
-    && apt-get update && apt-get install -y --no-install-recommends \
+    && apt-get update && apt-get install -y \
     docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Docker Buildx
+COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
+RUN docker buildx version
 
 # Install Docker Compose
 RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
@@ -259,11 +263,12 @@ ARG USER_GID
 ARG USER_UID
 
 # Create an assign app path
+USER root
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
-COPY ./src ./src
+COPY ./unconstrained ./unconstrained
 COPY ./tests ./tests
 COPY ./pytest.ini .
 
@@ -298,6 +303,7 @@ ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
 # Create an assign app path
+USER root
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
 USER ${USER_NAME}

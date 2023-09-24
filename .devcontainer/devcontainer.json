@@ -10,11 +10,11 @@
         // [Optional] Mount the hosts docker engine
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
-        "source=unconstrained-vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
+        // "source=unconstrained-vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
     ],
     "remoteEnv": {
-        // Add the local scripts directory to PATH
-        "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
+        // [Optional] Add the local scripts directory to PATH
+        // "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
     },
     // VSCode settings inside the container
     "customizations": {
@@ -62,10 +62,10 @@
                 "dekkerone.minizinc",
                 // D2 language support
                 "Terrastruct.d2",
-                // Dagger LSP
-                "Dagger.dagger",
                 // Docker support
-                "ms-azuretools.vscode-docker"
+                "ms-azuretools.vscode-docker",
+                // Dagger LSP
+                "Dagger.dagger"
             ]
         }
     },

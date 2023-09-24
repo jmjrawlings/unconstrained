@@ -1,44 +1,34 @@
 from unconstrained import *
+from pydantic import BaseModel
+from uuid import UUID, uuid4
 
 NAME = 'Queens'
 HOME = Path(__file__).parent.parent
 INPUT = HOME / 'input'
 OUTPUT = HOME / 'output'
-DATABASE = OUTPUT / 'queens.db'
 
+class M(BaseModel):
+    model_id : UUID
+    model : "Model" 
 
-Model = db.create_model_class()
+class Model(M):
+    name : str
+    n    : int
+    queens : List["Queen"]
 
+class Queen(M):
+    queen_id : UUID
+    number   : int
+    row      : int
+    col      : int
 
-class Scenario(Model, table=True):
-
-    # Columns =====================================       
-    name : str = db.column()
-    n    : int = db.column()
-
-    # Relations ===================================
-    queens : List["Queen"] = db.relation("scenario")
-
-
-class Queen(Model, table=True):
-
-    # Columns =====================================
-    number      : int = db.column()
-    scenario_id : int = db.foreign_key(Scenario.id)
-    row         : int = db.column()
-    col         : int = db.column()
-    
-    # Relations ===================================
-    scenario : Scenario = db.relation('queens')
-
-
-def create_scenario(n=3) -> Scenario:
+def create(n=3) -> Model:
     """
-    Create a Scenario for the given
+    Create a model for the given
     number of Queens
     """
     
-    scenario = Scenario(n=n, name=f'Queens ({n})')
+    model = Model(n=n, name=f'Queens ({n})', queens=[])
     for i in range1(n):
         queen = Queen(number=i, row=0, col=0, scenario=scenario)
         scenario.queens.append(queen)

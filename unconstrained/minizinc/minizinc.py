@@ -10,6 +10,7 @@ from minizinc import Driver
 from typing import TypedDict
 from shutil import copy
 from copy import deepcopy
+from pydantic import BaseModel, Field
 import math
 import logging
 
@@ -243,31 +244,30 @@ FLATTEN_SHAVE       = FlattenOption.SHAVE
 FLATTEN_SAC         = FlattenOption.SAC
 
 
-@attr.s(**ATTRS)
-class Result:
+class Result(BaseModel):
     """
     The result of solving a model
     """
-    name             : str             = string_field()
-    model_string     : str             = string_field()
-    model_file       : str             = string_field()
-    data_string      : str             = string_field()
-    data_file        : str             = string_field()
-    method           : Method          = enum_field(Method, SATISFY)
-    status           : Status          = enum_field(Status, Status.FEASIBLE)
-    error            : str             = string_field()
-    flatten_time     : Duration        = duration_field()
-    start_time       : DateTime        = datetime_field()
-    end_time         : DateTime        = datetime_field()
-    statistics       : Statistics      = dict_field()
-    iteration        : int             = int_field()
-    objective        : Optional[int]   = int_field(optional=True)
-    objective_bound  : Optional[int]   = int_field(optional=True)
-    absolute_gap     : Optional[int]   = int_field(optional=True)
-    relative_gap     : Optional[float] = float_field(optional=True)
-    absolute_delta   : Optional[int]   = int_field(optional=True)
-    relative_delta   : Optional[float] = int_field(optional=True)
-    variables        : Dict[str, Any]  = attr.ib(factory=dict)
+    name             : str             
+    model_string     : str             
+    model_file       : str             
+    data_string      : str             
+    data_file        : str             
+    method           : Method          = SATISFY
+    status           : Status          = Status.FEASIBLE
+    error            : str             
+    flatten_time     : Duration        
+    start_time       : DateTime        
+    end_time         : DateTime        
+    statistics       : Statistics      = Field(default_factory=dict)
+    iteration        : int             = 0
+    objective        : Optional[int]   = None
+    objective_bound  : Optional[int]   = None
+    absolute_gap     : Optional[int]   = None
+    relative_gap     : Optional[float] = None
+    absolute_delta   : Optional[int]   = None
+    relative_delta   : Optional[float] = None
+    variables        : Dict[str, Any]  = Field(default_factory=dict)
         
     @property
     def solve_time(self) -> Period:
@@ -330,9 +330,7 @@ class Result:
         return f'<{self!s}>'
     
 
-
-@attr.s(**ATTRS)
-class SolveOptions:
+class SolveOptions(BaseModel):
     solver_id       : str           = string_field(default="gecode")
     threads         : int           = int_field(default=4)
     time_limit      : Duration      = duration_field(default=dict(minutes=1))

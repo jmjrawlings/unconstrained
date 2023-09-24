@@ -1,60 +1,41 @@
 from unconstrained import *
+from pydantic import BaseModel
 
 HOME = Path(__file__).parent.parent
 INPUT = HOME / 'input'
 OUTPUT = HOME / 'output'
-DATABASE = OUTPUT / 'nurse_rostering.db'
 
+class M(BaseModel):
+    model_id : int
+    model : "Model"
 
-Model = db.create_model_class()
+class Model(M):    
+    days     : List["Day"]         
+    shifts   : List["Shift"]     
+    nurses   : List["Nurse"]     
+    requests : List["ShiftRequest"]
 
+class Day(M):
+    day_id : int
+    day_no : int
 
-class Scenario(Model, table=True):
-    days : List["Day"]         = db.relation('scenario')
-    shifts : List["Shift"]     = db.relation('scenario')
-    nurses : List["Nurse"]     = db.relation('scenario')
-    requests : List["Request"] = db.relation('scenario')
+class Nurse(M):
+    nurse_id : int             
+    nurse_no : int  
 
+class Shift(M):
+    shift_id : int               
+    shift_no : int
+    day_id   : int
 
-class Day(Model, table=True):
-    scenario_id : int      = db.foreign_key(Scenario.id)
-    scenario : "Scenario"  = db.relation('days')
-    number : int           = db.column()
-    shifts : List["Shift"] = db.relation('day')
+class ShiftRequest(M):
+    shift_id : int
+    nurse_id : int
 
-
-class Nurse(Model, table=True):
-    scenario_id : int          = db.foreign_key(Scenario.id)
-    scenario : Scenario        = db.relation(Scenario.nurses)
-    number : int               = db.column()
-    shifts: List["Shift"]      = db.relation('nurse')
-    requests : List["Request"] = db.relation('nurse')
-    
-
-class Shift(Model, table=True):
-    scenario_id : int          = db.foreign_key(Scenario.id)
-    scenario : Scenario        = db.relation(Scenario.shifts)
-    number : int               = db.column()
-    day_id : int               = db.foreign_key(Day.id)
-    day : Day                  = db.relation(Day.shifts)
-    nurse_id : Optional[int]   = db.foreign_key(Nurse.id)
-    nurse : Optional[Nurse]    = db.relation(Nurse.shifts)
-    requests : List["Request"] = db.relation('shift')
-
-
-class Request(Model, table=True):
-    scenario_id : int   = db.foreign_key(Scenario.id)
-    scenario : Scenario = db.relation(Scenario.requests)
-    shift_id : int      = db.foreign_key(Shift.id)
-    shift : Shift       = db.relation(Shift.requests)
-    nurse_id : int      = db.foreign_key(Nurse.id)
-    nurse : Nurse       = db.relation(Nurse.requests)
-
-
-def create_scenario(num_days=3, num_nurses=4, num_shifts=3) -> Scenario:
+def create(num_days=3, num_nurses=4, num_shifts=3) -> Model:
     from itertools import cycle
-        
-    scenario = Scenario()
+            
+    model = Model()
 
     for i in range1(num_nurses):
         nurse = Nurse(scenario=scenario, number=i)

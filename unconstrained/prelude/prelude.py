@@ -7,7 +7,6 @@ from typing import (Any, AsyncGenerator, Callable, Dict, List, Optional, Set,
                     Type, TypeVar, Union)
 from uuid import uuid4
 
-import attr
 import pandas as pd
 import pendulum as pn
 from pendulum import date, datetime, duration, now, period, today
@@ -18,6 +17,7 @@ from pendulum.period import Period
 from pendulum.tz.timezone import UTC, Timezone
 from rich import print
 from rich.logging import RichHandler
+from pydantic import Field
 
 DF = pd.DataFrame
 T = TypeVar("T")
@@ -335,70 +335,7 @@ def round_minutes(dt: DateTime, precision: int = 1, up=False) -> DateTime:
     """Round the timestamp to the given precision (in minutes)"""
     new_minute = (dt.minute // precision + int(up)) * precision
     return dt.add(minutes=new_minute - dt.minute).replace(second=0)
-
-
-def make_field(cls : Type[T], null: T, converter : Callable[[Any], T] = None, comment="", **kwargs):
-    optional = kwargs.pop('optional', False)
-    if 'default' not in kwargs:
-        if 'factory' in kwargs:
-            pass
-        elif optional:
-            kwargs['default'] = None
-        else:
-            kwargs['default'] = null
-                
-    kwargs['converter'] = attr.converters.optional(converter) if optional else converter
-    kwargs['validator'] = attr.validators.optional(attr.validators.instance_of(cls)) if optional else attr.validators.instance_of(cls)
-    kwargs['on_setattr'] = attr.setters.convert
-    return attr.attrib(metadata=dict(comment=comment), **kwargs)
-
-
-def string_field(**kwargs):
-    return make_field(str, '', str, **kwargs)
-
-
-def uuid_field(**kwargs):
-    return make_field(str, '', str, factory=uuid, **kwargs)
-
-
-def int_field(**kwargs):
-    return make_field(int, 0, int, **kwargs)
-
-
-def float_field(**kwargs):
-    return make_field(float, 0.0, float, **kwargs)
-
-
-def bool_field(**kwargs):
-    return make_field(bool, False, bool, **kwargs)
-
-
-def duration_field(**kwargs):
-    return make_field(Duration, Duration(), to_duration, **kwargs)
-    
-
-def period_field(**kwargs):
-    return make_field(Period, Period(now(), now()), to_period, **kwargs)
-
-
-def datetime_field(**kwargs):
-    return make_field(DateTime, None, converter=to_datetime, factory=now, **kwargs)
-
-
-def object_field(cls, **kwargs):
-    return make_field(cls, None, **kwargs)
-
-
-def dict_field(**kwargs):
-    return make_field(dict, dict(), dict, **kwargs)
-
-
-def enum_field(cls : Type[E], null : E, **kwargs):
-    
-    def converter(x):
-        return cls(x)
-
-    return make_field(cls, null, converter, **kwargs)
+              
 
 def enumerate1(x):
     for i,y in enumerate(x):
