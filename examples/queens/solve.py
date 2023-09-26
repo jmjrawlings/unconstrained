@@ -1,16 +1,17 @@
 from unconstrained import *
-from ..model import *
+from unconstrained import minizinc as mz
+from .model import Model
 
-async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
+async def solve(model : Model, options : mz.SolveOptions, **kwargs):
     """
     Solve the scenario with the given options
     """
             
-    model = f"""
+    mzn = f"""
     % N-Queens satisfaction model
     include "alldifferent.mzn";
         
-    int: n = {scenario.n};
+    int: n = {model.n};
 
     set of int: N = 1 .. n;
 
@@ -31,7 +32,7 @@ async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
         satisfy;
     """
 
-    async for result in mz.solve(model, options, **kwargs):
+    async for result in mz.solve(mzn, options, **kwargs):
         
         if not result.has_solution:
             yield result
@@ -39,7 +40,7 @@ async def solve(scenario : Scenario, options : mz.SolveOptions, **kwargs):
 
         array = result['q']
         for i, row in enumerate(array):
-            queen = scenario.queens[i]
+            queen = model.queens[i]
             queen.col = i + 1
             queen.row = row
 

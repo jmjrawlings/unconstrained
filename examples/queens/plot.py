@@ -1,12 +1,12 @@
 from unconstrained.charting import *
-from ..model import *
+from .model import *
 
 
-def create_chart_data(scenario : Scenario):    
+def create_chart_data(model : Model):    
     records = []
-    for queen in scenario.queens:
+    for queen in model.queens:
         records.append(dict(
-            n = scenario.n,
+            n = model.n,
             queen = queen.number,
             y = queen.row,
             y2 = queen.row + 1,
@@ -17,8 +17,8 @@ def create_chart_data(scenario : Scenario):
     return df
 
 
-def plot(scenario : Scenario) -> Chart:
-    data = create_chart_data(scenario)
+def plot(model : Model) -> Chart:
+    data = create_chart_data(model)
     base = (alt
         .Chart(data)
         .encode(x=alt.X('x:O', axis=alt.Axis(grid=True, labels=False)))

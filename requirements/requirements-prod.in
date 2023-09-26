@@ -1,8 +1,9 @@
 altair
-pydantic
+attrs
+cattrs
 loguru
 minizinc
 ortools
 pendulum
 rich
-vega
+strenum

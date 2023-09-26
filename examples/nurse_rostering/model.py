@@ -1,9 +1,4 @@
 from unconstrained import *
-from pydantic import BaseModel
-
-HOME = Path(__file__).parent.parent
-INPUT = HOME / 'input'
-OUTPUT = HOME / 'output'
 
 class M(BaseModel):
     model_id : int

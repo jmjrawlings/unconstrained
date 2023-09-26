@@ -1,14 +1,12 @@
 import datetime as dt
 import json
-import logging
 from enum import Enum
 from pathlib import Path
-from typing import (Any, AsyncGenerator, Callable, Dict, List, Optional, Set,
-                    Type, TypeVar, Union)
-from uuid import uuid4
+from typing import Any, TypeVar, Union, Callable
 
 import pandas as pd
 import pendulum as pn
+from loguru import logger as log
 from pendulum import date, datetime, duration, now, period, today
 from pendulum.date import Date
 from pendulum.datetime import DateTime
@@ -17,16 +15,12 @@ from pendulum.period import Period
 from pendulum.tz.timezone import UTC, Timezone
 from rich import print
 from rich.logging import RichHandler
-from pydantic import Field
+from typing import Type, List, Set
 
 DF = pd.DataFrame
 T = TypeVar("T")
 E = TypeVar("E", bound=Enum)
 
-def uuid():
-    return str(uuid4())
-
-from loguru import logger as log
 
 log.remove()
 
@@ -61,10 +55,16 @@ def to_tick(value: Any = None) -> str:
         return "❌"
 
 
+def to_float(value: Any = None) -> float:
+    if value is None:
+        return 0.0
+    return float(value)
+
+
 def to_string(value: Any = None) -> str:
     if value is None:
         return ""
-    return str(value).strip()
+    return str(value)
 
 
 def to_case_insensitive(x) -> str:
@@ -170,9 +170,9 @@ def to_elapsed(obj: Any) -> str:
 
 def to_datetime(value=None, timezone=UTC) -> DateTime:
     """
-    Convert the given value to a DateTime
+    Convert the given value to a pendulum datetime
     """
-
+    
     if isinstance(value, DateTime):
         val = value
 
@@ -188,21 +188,21 @@ def to_datetime(value=None, timezone=UTC) -> DateTime:
         )
 
     elif isinstance(value, str):
-        parsed = pn.parse(value)
-        return to_datetime(parsed, timezone=timezone)
+        parsed = pn.parser.parse(value)
+        val = to_datetime(parsed, timezone=timezone)
 
     elif value is None:
-        val = pn.now()
+        val = DateTime.min
 
     else:
         raise ValueError(f"Could not convert {value} of type {type(value)} to DateTime")
 
-    ret = val.in_tz(timezone)
+    localized = val.in_tz(timezone)
+    
+    return localized
 
-    return ret
 
-
-def to_date(value) -> Date:
+def to_date(value = None) -> Date:
     """Convert the given value to a Date"""
 
     if isinstance(value, Date):
@@ -217,12 +217,12 @@ def to_date(value) -> Date:
 
 def to_period(*args) -> Period:
     """
-    Convert the given arguments to a Period
+    Convert the given arguments to a time period
     """
-
+                    
     if not args:
-        t = now()
-        return Period(t, t)
+        t = to_datetime()
+        return period(t, t)
 
     n = len(args)
     if n == 1:
@@ -230,7 +230,7 @@ def to_period(*args) -> Period:
         if isinstance(arg, Period):
             return arg
         t = to_datetime(args[0])
-        return Period(t, t)
+        return period(t, t)
 
     a, b = args
     t0 = to_datetime(a)
@@ -345,20 +345,110 @@ def enumerate1(x):
 def range1(x):
     return range(1, x+1)
 
+_enum_parsers_ = {}
 
-def to_list(*args, ignore_types=[str]):
+def to_enum(ty: Type[E]) -> Callable[[Any], E]:
+
+    if ty in _enum_parsers_:
+        return _enum_parsers_[ty]
+
+    def parse(v: Any) -> E:
+        # Already the right type
+        if isinstance(v, ty):
+            return v
+        # Lookup by name
+        try:
+            return ty[v]
+        # Lookup by value
+        except KeyError:
+            return ty(v)
+
+    _enum_parsers_[ty] = parse
+    return parse
+
+
+
+def to_list(*args, allow_none=True) -> List:
+    """
+    Flatten the given arguments into a single list
+    """
+    def unpack(arg):
+        if hasattr(arg, '__iter__'):
+            if isinstance(arg, str):
+                yield arg
+            else:                
+                for a in arg:
+                    yield from unpack(a)
+        elif callable(arg):
+            yield from unpack(arg())
+        elif arg is None:
+            if allow_none:
+                yield None
+            else:
+                return
+        else:
+            yield arg
+
+    lst = list(unpack(args))
+    return lst
+
+
+_list_parsers_ = {}
+
+def to_typed_list(ty: Type[T]) -> Callable[..., T]: 
     
-    def unpack(*args):
-        for arg in args:
-            if type(arg) in ignore_types:
-                yield arg
-                continue
+    if ty in _list_parsers_:
+        return _list_parsers_[ty]
 
-            try:
-                xs = list(arg)
-                yield from unpack(*xs)
-            except:
+    def parse(*args) -> List[T]:
+                                                            
+        def unpack(arg):
+            # Correct type
+            if isinstance(arg, ty):
                 yield arg
+            # Iterable
+            elif hasattr(arg, '__iter__'):
+                for a in arg:
+                    yield unpack(a)
+            # Callable                
+            elif callable(arg):
+                yield unpack(arg())
+            # Typecheck                
+            else:
+                raise ValueError(f"{arg} was not of type {ty}")
 
-    flattened = list(unpack(*args))
-    return flattened
+        lst = list(unpack(*args))
+        return lst
+
+    _list_parsers_[ty] = parse
+    return parse #type:ignore
+
+_set_parsers_ = {}
+
+def to_typed_set(ty: Type[T]) -> Callable[..., T]: 
+    
+    if ty in _set_parsers_:
+        return _set_parsers_[ty]
+    
+    def parse(*args) -> Set[T]:
+                                                                            
+        def unpack(arg):
+            # Correct type
+            if isinstance(arg, ty):
+                yield arg
+            # Iterable
+            elif hasattr(arg, '__iter__'):
+                for a in arg:
+                    yield unpack(a)
+            # Callable                
+            elif callable(arg):
+                yield unpack(arg())
+            # Typecheck                
+            else:
+                raise ValueError(f"{arg} was not of type {ty}")
+
+        result = set(unpack(*args))
+        return result
+
+    _set_parsers_[ty] = parse
+    return parse #type:ignore

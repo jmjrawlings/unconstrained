@@ -1,4 +1,5 @@
-from unconstrained import *
+from pathlib import Path
+from unconstrained import minizinc as mz
 from pytest import fixture, mark
 
 @fixture
