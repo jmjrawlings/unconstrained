@@ -4,7 +4,7 @@ from .model import (
     duration_field,
     float_field,
     int_field,
-    list_field,
+    seq_field,
     uuid_field,
     string_field,
     dict_field,

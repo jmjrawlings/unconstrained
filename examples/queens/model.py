@@ -10,7 +10,7 @@ class Queen(BaseModel):
 class Model(BaseModel):
     name : str = string_field("Queens")
     n : int = int_field(5)
-    queens : List[Queen] = list_field(Queen)
+    queens : Seq[Queen] = seq_field(Queen)
 
 
 def create(n=3) -> Model:
@@ -22,5 +22,5 @@ def create(n=3) -> Model:
     model = Model(n=n, name=f'Queens ({n})', queens=[])
     for i in range1(n):
         queen = Queen(number=i)
-        model.queens.append(queen)
+        model.queens.add(queen)
     return model

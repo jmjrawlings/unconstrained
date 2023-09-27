@@ -367,61 +367,27 @@ def to_enum(ty: Type[E]) -> Callable[[Any], E]:
     return parse
 
 
-
-def to_list(*args, allow_none=True) -> List:
+def flatten(*args):
     """
-    Flatten the given arguments into a single list
+    Flatten the given arguments by yielding individual
+    elements
     """
-    def unpack(arg):
-        if hasattr(arg, '__iter__'):
+    def items(arg):
+        if hasattr(arg, 'items'):
+            yield from items(arg.items)
+        elif hasattr(arg, '__iter__'):
             if isinstance(arg, str):
                 yield arg
             else:                
                 for a in arg:
-                    yield from unpack(a)
+                    yield from items(a)
         elif callable(arg):
-            yield from unpack(arg())
-        elif arg is None:
-            if allow_none:
-                yield None
-            else:
-                return
+            yield from items(arg())
         else:
             yield arg
 
-    lst = list(unpack(args))
-    return lst
+    yield from items(args)
 
-
-_list_parsers_ = {}
-
-def to_typed_list(ty: Type[T]) -> Callable[..., T]: 
-    
-    if ty in _list_parsers_:
-        return _list_parsers_[ty]
-
-    def parse(*args) -> List[T]:
-                                                            
-        def unpack(arg):
-            # Correct type
-            if isinstance(arg, ty):
-                yield arg
-            # Iterable
-            elif hasattr(arg, '__iter__'):
-                for a in arg:
-                    yield unpack(a)
-            # Callable                
-            elif callable(arg):
-                yield unpack(arg())
-            # Typecheck                
-            else:
-                raise ValueError(f"{arg} was not of type {ty}")
-
-        lst = list(unpack(*args))
-        return lst
-
-    _list_parsers_[ty] = parse
-    return parse #type:ignore
 
 _set_parsers_ = {}
 

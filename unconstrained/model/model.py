@@ -32,8 +32,8 @@ def float_field(default=0.0, **kwargs) -> float:
     return field(default=default, converter=to_float, **kwargs)
 
 
-def list_field(ty: Type[T], **kwargs) -> List[T]:
-    return field(factory=list, converter=to_typed_list(ty), **kwargs)
+def seq_field(ty: Type[T], **kwargs) -> Seq[T]:
+    return field(factory=Seq, converter=Seq.of_type(ty), **kwargs)
 
 
 def set_field(ty: Type[T], **kwargs) -> List[T]:
