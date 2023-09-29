@@ -675,9 +675,9 @@ def join(*exprs, separator=",", bracket=True, newline=True):
 
     """
     if bracket:
-        list = to_list(*exprs).map(bracket)
+        list = lst(*exprs).map(bracket)
     else:
-        list = to_list(*exprs)
+        list = lst(*exprs)
     
     if not list:
         return None
@@ -730,8 +730,8 @@ def array(*exprs, comments=None, index=None, newline=False, pad=10):
     newline:
         add a newline after each member?
     """
-
-    list = to_list(*exprs).map(value, str)
+    
+    list = [str(v) for v in flatten(*exprs)]
     members = []
     for i, item in enumerate(list):
         string = str(item)
@@ -782,7 +782,7 @@ def set_(*exprs, comments=None, newline=False, pad=10):
         add a newline after each member?
     """
 
-    list = to_list(*exprs).map(value)
+    list = seq(object, *exprs).map(value)
     members = []
     for i, item in enumerate(list):
         string = str(item)
@@ -1070,7 +1070,7 @@ class ModelBuilder:
             
         root = f'{ti} of {inst} {type}: {name}'
         stem = value
-                
+                        
         if (value is not None) and not isinstance(value, str):
             stem = array(value)
             if verbose:

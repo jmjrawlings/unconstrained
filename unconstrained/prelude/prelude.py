@@ -16,6 +16,7 @@ from pendulum.tz.timezone import UTC, Timezone
 from rich import print
 from rich.logging import RichHandler
 from typing import Type, List, Set
+from uuid import UUID
 
 DF = pd.DataFrame
 T = TypeVar("T")
@@ -301,6 +302,15 @@ def to_filepath(value: Union[Path, str], existing=False) -> Path:
 
 def to_existing_filepath(value) -> Path:
     return to_filepath(value, existing=True)
+
+
+def to_id(value: Any = None) -> UUID:
+    if isinstance(value, UUID):
+        return value
+    elif isinstance(x := getattr(value, 'id'), UUID):
+        return x
+    else:
+        raise TypeError(f"Expected a UUID, got a {value}")
 
 
 def read_json(path) -> dict:

@@ -1,3 +1,3 @@
 from .prelude import *
-from .seq import Seq, seq
-from .set import Set, set
+from .seq import Seq, seq, list
+from .map import Map, map

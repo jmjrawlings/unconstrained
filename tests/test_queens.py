@@ -1,5 +1,5 @@
 from unconstrained import *
-from examples import queens
+from models import queens
 
 async def test_solve(minizinc_options, tmp_path):
         

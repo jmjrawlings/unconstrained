@@ -7,13 +7,13 @@ library
 
 from ..prelude import *
 from attrs import define, field
-from uuid import UUID, uuid4
+from uuid import UUID as id, uuid4
 from pendulum.date import Date
 from pendulum.datetime import DateTime
 from pendulum.period import Period
 
-def uuid_field(**kwargs) -> UUID:
-    return field(factory=uuid4, **kwargs)
+def id_field(**kwargs) -> id:
+    return field(factory=uuid4, converter=to_id, **kwargs)
 
 
 def int_field(default=0, **kwargs) -> int:
@@ -33,11 +33,13 @@ def float_field(default=0.0, **kwargs) -> float:
 
 
 def seq_field(ty: Type[T], **kwargs) -> Seq[T]:
-    return field(factory=Seq, converter=Seq.of_type(ty), **kwargs)
+    cls = Seq.module(ty)
+    return field(factory=cls, converter=cls, **kwargs)
 
 
 def set_field(ty: Type[T], **kwargs) -> List[T]:
-    return field(factory=set, converter=to_typed_set(ty), **kwargs)
+    cls = Map.module(ty)
+    return field(factory=cls, converter=cls, **kwargs)
 
 
 def dict_field(**kwargs):
@@ -61,7 +63,7 @@ def date_field() -> Date:
     return field(factory=to_date, converter=to_date)
 
 
-def period_field() -> DateTime:
+def period_field() -> Period:
     return field(factory=to_period, converter=to_period)
 
 
@@ -70,4 +72,4 @@ class BaseModel:
     """
     Base model class to use
     """
-    id : UUID = uuid_field()
+    id : UUID = id_field()

@@ -5,7 +5,7 @@ from .model import (
     float_field,
     int_field,
     seq_field,
-    uuid_field,
+    id_field,
     string_field,
     dict_field,
     set_field,

@@ -1,5 +1,5 @@
 from .prelude import *
-from typing import Generic, Optional, Any, Iterable, TypeVar
+from typing import Generic, Any, TypeVar
 from itertools import zip_longest
 
 __cache__ = {}
@@ -16,7 +16,9 @@ class Seq(Generic[T]):
     data : List[T]
         
     def __init__(self, *args):
-        self.data = list(self.yield_from(args))
+        self.data = []
+        for item in self.yield_from(args):
+            self.data.append(item)
     
     @classmethod
     def yield_from(cls, args):
@@ -41,7 +43,7 @@ class Seq(Generic[T]):
     
     def map(self, f, type: Type[U] = object) -> "Seq[U]":
         """ Map the given function of the sequence """
-        cls = self.of_type(type)
+        cls = self.module(type)
         seq = cls(map(f, self))
         return seq
         
@@ -51,7 +53,7 @@ class Seq(Generic[T]):
         return seq
 
     @staticmethod
-    def of_type(t: Type[T]) -> Type["Seq[T]"]:
+    def module(t: Type[T]) -> Type["Seq[T]"]:
 
         if t in __cache__:
             return __cache__[t]
@@ -99,8 +101,16 @@ class Seq(Generic[T]):
 def seq(type: Type[T], *args) -> Seq[T]:
     """
     Create a sequence of the given type
-    with the arguments provided
+    from the given arguments
     """
-    cls = Seq.of_type(type)
+    cls = Seq.module(type)
     seq = cls(args)
     return seq
+
+
+def list(*args) -> Seq[Any]:
+    """
+    Create an untyped sequence from
+    the given arguments
+    """
+    return seq(object, *args)
