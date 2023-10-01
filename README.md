@@ -2,13 +2,25 @@
 
 [![unconstrained](https://github.com/jmjrawlings/unconstrained/actions/workflows/test.yaml/badge.svg)](https://github.com/jmjrawlings/unconstrained/actions/workflows/test.yaml)
 
-My personal python development environment for solving constraint programming problems.
+My personal development environment for modelling and solving constraint programming problems in python.
 
 ## Features
-- MiniZinc + Google ORTools integration
-- Prod/Test/Dev docker containers
-- VSCode devcontainer integration
-- A couple of example problems
+- A fully featured [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) 
+    - Python
+    - MiniZinc
+    - Google ORTools
+- A test dockerfile target (no dev dependencies)
+- A prod dockerfile target (no test dependencies)
+- Some example models (need more)
+    - [N-Queens](./models/queens/)
+    - [Nurse Rostering](./models/rostering)
+- [A strongly typed wrapper for minizinc model results](./unconstrained/minizinc/minizinc.py)
+- [A strongly typed Map class (dict replacement)](./unconstrained/prelude/map.py)
+- [A strongly typed List class (list replacement)](./unconstrained/prelude/list.py)
+- [Convenience functions for defining attrs models](./unconstrained/model/mode.py)
+- [CI/CD scripts using dagger-io](./build/build.py)
+    - Deployed to [Github](./.github/workflows/test.yaml)
+- [Multi layered python package dependency management using pip-tools](./requirements/)
 
 
 ## Repository Structure
@@ -27,7 +39,7 @@ My personal python development environment for solving constraint programming pr
 ```
 
 
-## Helpful Links
+## Links
 
 ### Constraint Programming
 - [MiniZinc](https://www.minizinc.org/)
@@ -43,7 +55,9 @@ My personal python development environment for solving constraint programming pr
 
 ### Python Packages
 - [Altair](https://altair-viz.github.io/)
-- [Pydantic](https://docs.pydantic.dev/latest/)sqlmodel)
+- [Attrs](https://www.attrs.org/en/stable/)
+- [Cattrs](https://catt.rs/en/stable/)
+- [OR-Tools](https://developers.google.com/optimization)
 - [Minizinc](https://github.com/MiniZinc/minizinc-python)
 - [Pytest](https://docs.pytest.org/en/latest/)
 
@@ -54,7 +68,7 @@ My personal python development environment for solving constraint programming pr
 - [Dagger](https://dagger.io/)
 
 
-## Notes
+## Notes / TODO
 
 ### Docker
 - `apt-get` and `apt-install` takes forever which is very annoying when playing around with Dockerfiles.  Presumably theres a way to cache it but I can't quite figure it out.
