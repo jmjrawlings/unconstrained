@@ -270,10 +270,10 @@ USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 COPY ./unconstrained ./unconstrained
 COPY ./tests ./tests
+COPY ./models ./models
 COPY ./pytest.ini .
 
 COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-
 
 CMD pytest
 
