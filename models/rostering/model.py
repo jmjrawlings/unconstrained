@@ -1,5 +1,4 @@
 from unconstrained import *
-from uuid import UUID as id
 
 @define
 class Day(BaseModel):
@@ -16,16 +15,22 @@ class Shift(BaseModel):
 
 @define
 class ShiftRequest(BaseModel):
-    shift_id : id = id_field()
-    nurse_id : id = id_field()
+    shift_id : Id = id_field()
+    nurse_id : Id = id_field()
 
 @define
 class Model(BaseModel):
+    name : str = str_field()
     days : Seq[Day] = seq_field(Day)
     shifts : Seq[Shift] = seq_field(Shift)
     nurses : Seq[Nurse] = seq_field(Nurse)
     requests : Seq[ShiftRequest] = seq_field(ShiftRequest)
 
+    def __str__(self) -> str:
+        return f"Model with {self.nurses.copy} nurses over {self.days.count} days"
+    
+    def __repr__(self) -> str:
+        return f"<{self!s}>"
 
 
 def create(days=3, nurses=4, shifts=3) -> Model:
@@ -49,8 +54,9 @@ def create(days=3, nurses=4, shifts=3) -> Model:
     nurses = cycle(model.nurses)
     for shift in model.shifts:
         nurse = next(nurses)
-        request = Request(nurse=nurse, shift=shift, scenario=scenario)
-        scenario.requests.append(request)
+        request = ShiftRequest(shift_id=shift, nurse_id=nurse)
+        model.requests.add(request)
 
-    log.info(f'{scenario!r} was created')
-    return scenario
+
+    log.info(f'{model} was created')
+    return model

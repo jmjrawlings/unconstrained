@@ -1,4 +1,9 @@
+"""
+Tests for the minizinc api
+"""
+
 from unconstrained import *
+from unconstrained import minizinc as mz
 from pytest import mark, fixture
 
 

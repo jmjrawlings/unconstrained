@@ -1,17 +1,18 @@
 from unconstrained import *
+from unconstrained import minizinc as mz
 from .model import Model
 
 async def solve(model : Model, options : mz.SolveOptions):
     """
-    Solve the scenario with a generated MiniZinc model.
+    Solve the model with minizinc
     """
-
+    
     nurses = model.nurses
     shifts = model.shifts
     days = model.days
     requests = model.requests
     n,s,d,r = [len(x) for x in [nurses, shifts, days, requests]]
-                        
+                            
     mzn = mz.ModelBuilder()
     mzn.add_section('Nurse Rostering')
     mzn.add_multiline_comment(f'''

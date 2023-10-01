@@ -2,7 +2,8 @@ import datetime as dt
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, TypeVar, Union, Callable
+from typing import Any, Callable, Type, TypeVar, Union
+from uuid import UUID as Id
 
 import pandas as pd
 import pendulum as pn
@@ -15,13 +16,11 @@ from pendulum.period import Period
 from pendulum.tz.timezone import UTC, Timezone
 from rich import print
 from rich.logging import RichHandler
-from typing import Type, List, Set
-from uuid import UUID
 
 DF = pd.DataFrame
 T = TypeVar("T")
+U = TypeVar("U")
 E = TypeVar("E", bound=Enum)
-
 
 log.remove()
 
@@ -37,16 +36,21 @@ log.add(
     format='{message}'
     )
 
+
 def to_int(value: Any = None) -> int:
-    if value is None:
+    if isinstance(value, int):
+        return value
+    elif value is None:
         return 0
-    return int(value)
+    else:
+        return int(value)
 
 
 def to_bool(value: Any = None) -> bool:
-    if value is None:
-        return False
-    return bool(value)
+    if isinstance(value, bool):
+        return value
+    else:
+        return bool(value)
 
 
 def to_tick(value: Any = None) -> str:
@@ -57,23 +61,21 @@ def to_tick(value: Any = None) -> str:
 
 
 def to_float(value: Any = None) -> float:
-    if value is None:
+    if isinstance(value, float):
+        return value
+    elif value is None:
         return 0.0
-    return float(value)
+    else:
+        return float(value)
 
 
 def to_string(value: Any = None) -> str:
-    if value is None:
-        return ""
-    return str(value)
-
-
-def to_case_insensitive(x) -> str:
-    if x is None:
+    if isinstance(value, str):
+        return value
+    elif value is None:
         return ""
     else:
-        x = str(x)
-        return x.replace(" ", "").lower()
+        return str(value)
 
 
 def to_duration(*args, **kwargs) -> Duration:
@@ -304,10 +306,10 @@ def to_existing_filepath(value) -> Path:
     return to_filepath(value, existing=True)
 
 
-def to_id(value: Any = None) -> UUID:
-    if isinstance(value, UUID):
+def to_id(value: Any = None) -> Id:
+    if isinstance(value, Id):
         return value
-    elif isinstance(x := getattr(value, 'id'), UUID):
+    elif isinstance(x := getattr(value, 'id'), Id):
         return x
     else:
         raise TypeError(f"Expected a UUID, got a {value}")
@@ -377,54 +379,16 @@ def to_enum(ty: Type[E]) -> Callable[[Any], E]:
     return parse
 
 
-def flatten(*args):
-    """
-    Flatten the given arguments by yielding individual
-    elements
-    """
-    def items(arg):
-        if hasattr(arg, 'items'):
-            yield from items(arg.items)
-        elif hasattr(arg, '__iter__'):
-            if isinstance(arg, str):
-                yield arg
-            else:                
-                for a in arg:
-                    yield from items(a)
-        elif callable(arg):
-            yield from items(arg())
-        else:
-            yield arg
+__dot_cache__ = {}
 
-    yield from items(args)
+class Dot:
 
+    def __getattribute__(self, name: str) -> Any:
+        if name in __dot_cache__:
+            return __dot_cache__[name]
+        def get(x):
+            return getattr(x, name)
+        __dot_cache__[name] = get
+        return get
 
-_set_parsers_ = {}
-
-def to_typed_set(ty: Type[T]) -> Callable[..., T]: 
-    
-    if ty in _set_parsers_:
-        return _set_parsers_[ty]
-    
-    def parse(*args) -> Set[T]:
-                                                                            
-        def unpack(arg):
-            # Correct type
-            if isinstance(arg, ty):
-                yield arg
-            # Iterable
-            elif hasattr(arg, '__iter__'):
-                for a in arg:
-                    yield unpack(a)
-            # Callable                
-            elif callable(arg):
-                yield unpack(arg())
-            # Typecheck                
-            else:
-                raise ValueError(f"{arg} was not of type {ty}")
-
-        result = set(unpack(*args))
-        return result
-
-    _set_parsers_[ty] = parse
-    return parse #type:ignore
+dot = Dot()

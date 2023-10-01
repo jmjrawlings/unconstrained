@@ -1,6 +1,6 @@
 from ..prelude import *
 from ..model import *
-from typing import AsyncIterable, Tuple, List, Optional, Dict
+from typing import AsyncIterable, Tuple, List, Optional, Dict, Any
 from datetime import timedelta
 from minizinc import Method
 from minizinc import Result as MzResult
@@ -123,17 +123,17 @@ def get_driver() -> Driver:
     return driver
 
 
-def get_available_solvers() -> List[Solver]:
+def get_available_solvers() -> Map[str, Solver]:
     """
     Get the available solvers
     """
+    solvers = Map.create(str, Solver, dot.id)
     driver = get_driver()
-    solvers = {}
+
     for tag, tag_solvers in driver.available_solvers(True).items():
         for solver in tag_solvers:
-            solvers[solver.id] = solver
+            solvers.add(solver)
 
-    solvers = list(solvers.values())
     for solver in solvers:
         log.info(f'MiniZinc Solver "{solver.name}" is installed')
 
@@ -248,14 +248,14 @@ class Result(BaseModel):
     """
     The result of solving a model
     """
-    name             : str             = string_field()
-    model_string     : str             = string_field()
-    model_file       : str             = string_field()
-    data_string      : str             = string_field()
-    data_file        : str             = string_field()
+    name             : str             = str_field()
+    model_string     : str             = str_field()
+    model_file       : str             = str_field()
+    data_string      : str             = str_field()
+    data_file        : str             = str_field()
     method           : Method          = enum_field(Method.SATISFY)
     status           : Status          = enum_field(Status.FEASIBLE)
-    error            : str             = string_field()
+    error            : str             = str_field()
     flatten_time     : Duration        = duration_field()
     start_time       : DateTime        = datetime_field()
     end_time         : DateTime        = datetime_field()
@@ -331,7 +331,7 @@ class Result(BaseModel):
     
 @define
 class SolveOptions(BaseModel):
-    solver_id       : str           = string_field(default="gecode")
+    solver_id       : str           = str_field(default="gecode")
     threads         : int           = int_field(default=4)
     time_limit      : Duration      = duration_field(default=dict(minutes=1))
     flatten_options : FlattenOption = enum_field(FlattenOption.SINGLE_PASS)
@@ -342,8 +342,8 @@ async def solve(
         model : str,
         options : SolveOptions,
         name : str = 'model',
-        debug_path : Union[Path, str] = '/tmp',
-        parameters : Optional[Dict[str, Any]] = None,
+        debug_path : Path | str = '/tmp',
+        parameters : None | Dict[str, Any] = None,
         **kwargs
         ) -> AsyncIterable[Result]:
 

@@ -1,4 +1,6 @@
 from unconstrained import *
+from unconstrained import minizinc as mz
+from unconstrained import charting as ch
 from models import queens
 
 async def test_solve(minizinc_options, tmp_path):

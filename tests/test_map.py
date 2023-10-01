@@ -1,8 +1,12 @@
+"""
+Tests for the map object
+"""
+
 from unconstrained import *
 
 @define
 class Item(BaseModel):
-    name : str = string_field()
+    name : str = str_field()
 
 def item(name):
     return Item(name=name)

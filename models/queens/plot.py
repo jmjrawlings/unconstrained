@@ -1,5 +1,6 @@
 from unconstrained.charting import *
 from .model import *
+import pandas as pd
 
 
 def create_chart_data(model : Model):    

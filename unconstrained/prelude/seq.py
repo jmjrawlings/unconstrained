@@ -1,11 +1,31 @@
 from .prelude import *
-from typing import Generic, Any, TypeVar
+from typing import Generic, Any, TypeVar, List
 from itertools import zip_longest
 
 __cache__ = {}
 
-T = TypeVar("T")
-U = TypeVar("U")
+def flatten(*args):
+    """
+    Flatten the given arguments by yielding individual
+    elements
+    """
+    def items(arg):
+        if hasattr(arg, 'items'):
+            yield from items(arg.items)
+        elif hasattr(arg, '__iter__'):
+            if isinstance(arg, str):
+                yield arg
+            else:                
+                for a in arg:
+                    yield from items(a)
+        elif callable(arg):
+            yield from items(arg())
+        else:
+            yield arg
+
+    yield from items(args)
+    
+
 
 class Seq(Generic[T]):
     """
@@ -54,15 +74,50 @@ class Seq(Generic[T]):
 
     @staticmethod
     def module(t: Type[T]) -> Type["Seq[T]"]:
+        """
+        Create or return the class representing
+        a sequence of type T
+        """
 
         if t in __cache__:
             return __cache__[t]
         
-        class TSeq(Seq[T]): #type:ignore 
+        class Sequence(Seq[T]): #type:ignore 
             type = t #type:ignore
 
-        __cache__[t] = TSeq
-        return TSeq
+        __cache__[t] = Sequence
+        return Sequence
+
+    @staticmethod
+    def list(*args) -> "Seq[Any]":
+        """
+        Create an untyped sequence from
+        the given arguments
+        """
+        cls = Seq.module(object)
+        seq = cls(args)
+        return seq
+    
+    @staticmethod
+    def create(t: Type[T], *args) -> "Seq[T]":
+        """
+        Create an untyped sequence from
+        the given arguments
+        """
+        cls = Seq.module(t)
+        seq = cls(args)
+        return seq
+    
+    @classmethod
+    def parse(cls, arg):
+        """ 
+        Parse the given value as an instance of
+        this class
+        """
+        if isinstance(arg, cls):
+            return arg
+        return cls(arg)
+
 
     @property
     def count(self):
@@ -78,7 +133,7 @@ class Seq(Generic[T]):
         return iter(self.data)
     
     def __getitem__(self, idx):
-        return self.data[idx] 
+        return self.data[idx]
 
     def __len__(self):
         return len(self.data)
@@ -103,14 +158,5 @@ def seq(type: Type[T], *args) -> Seq[T]:
     Create a sequence of the given type
     from the given arguments
     """
-    cls = Seq.module(type)
-    seq = cls(args)
+    seq = Seq.create(type, args)
     return seq
-
-
-def list(*args) -> Seq[Any]:
-    """
-    Create an untyped sequence from
-    the given arguments
-    """
-    return seq(object, *args)

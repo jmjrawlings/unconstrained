@@ -1,6 +1,6 @@
-from .prelude import flatten
+from .prelude import *
 from .seq import seq
-from typing import Generic, Optional, Any, Iterable, TypeVar, Callable, Type, Dict
+from typing import Generic, TypeVar, Callable, Type, Dict
 from itertools import zip_longest
 from uuid import UUID
 
@@ -101,6 +101,16 @@ class Map(Generic[K,V]):
     @staticmethod
     def from_id(v: Type[V]):
         return Map.module(UUID, v, get_id)
+    
+    @classmethod
+    def parse(cls, arg):
+        """
+        Parse the given value as an instance of this class
+        """
+        if isinstance(arg, cls):
+            return arg
+        map = cls(arg)
+        return map
 
     @staticmethod
     def module(k: Type[K], v: Type[V], get_key) -> Type["Map[K,V]"]:
@@ -118,10 +128,20 @@ class Map(Generic[K,V]):
 
         __cache__[uid] = Module
         return Module
+    
+    @staticmethod
+    def create(k: Type[K], v: Type[V], get_key, *args) -> "Map[K,V]":
+        cls = Map.module(k, v, get_key)
+        map = cls(args)
+        return map
 
     @property
     def count(self):
         return len(self.data)
+    
+    @property
+    def is_empty(self):
+        return not self.data
     
     def __iadd__(self, other):
         self.add(other)
