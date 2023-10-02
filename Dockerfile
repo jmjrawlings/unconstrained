@@ -204,6 +204,11 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | s
 # Install D2 lang
 RUN curl -fsSL https://d2lang.com/install.sh | sh -s --
 
+# Install Act
+RUN cd /usr/local/bin \
+    && wget -c https://github.com/nektos/act/releases/download/v0.2.52/act_Linux_x86_64.tar.gz -O - | tar -xz \
+    && act --version
+
 # Install Developer packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
