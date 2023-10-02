@@ -13,5 +13,6 @@ from .model import (
     period_field,
     enum_field,
     define,
-    field
+    field,
+    optional
 )

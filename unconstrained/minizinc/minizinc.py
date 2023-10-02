@@ -261,12 +261,12 @@ class Result(BaseModel):
     end_time         : DateTime        = datetime_field()
     statistics       : Statistics      = field(factory=Statistics)
     iteration        : int             = int_field()
-    objective        : Optional[int]   = None
-    objective_bound  : Optional[int]   = None
-    absolute_gap     : Optional[int]   = None
-    relative_gap     : Optional[float] = None
-    absolute_delta   : Optional[int]   = None
-    relative_delta   : Optional[float] = None
+    objective        : Optional[int]   = optional(int_field())
+    objective_bound  : Optional[int]   = optional(int_field())
+    absolute_gap     : Optional[int]   = optional(int_field())
+    relative_gap     : Optional[float] = optional(int_field())
+    absolute_delta   : Optional[int]   = optional(int_field())
+    relative_delta   : Optional[float] = optional(int_field())
     variables        : Dict[str, Any]  = dict_field()
         
     @property
