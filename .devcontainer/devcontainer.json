@@ -65,7 +65,9 @@
                 // Docker support
                 "ms-azuretools.vscode-docker",
                 // Dagger LSP
-                "Dagger.dagger"
+                "Dagger.dagger",
+                // Github actions
+                "github.vscode-github-actions"
             ]
         }
     },
