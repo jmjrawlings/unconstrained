@@ -73,6 +73,17 @@ def period_field() -> Period:
     return field(factory=to_period, converter=to_period)
 
 
+def optional(f, **kwargs):
+    default = kwargs.pop('default', f._default)
+        
+    def converter(v):
+        if v is None:
+            return 
+        return f.converter(v)
+
+    return field(default=default, converter=converter)
+
+
 converter = Converter()
 
 @define
