@@ -35,7 +35,7 @@ class Item(BaseModel):
 
 @define
 class MapModel(BaseModel):
-    items : Map[id, Item] = map_field(Item)
+    items : Map[UUID, Item] = map_field(Item)
     
 
 def test_create_map_model():
@@ -63,3 +63,35 @@ def test_map_model_convert():
     
     # The actual containers should be differnet
     assert id(ia) != id(ib)
+
+@define
+class ComplexModel(BaseModel):
+    a : int = int_field()
+    b : float = float_field(default=23.8)
+    c : str = str_field(default="xd")    
+    d : Seq[Item] = seq_field(Item)
+    e : Map[UUID, Item] = map_field(Item)
+
+
+def test_model_serde():
+    m1 = ComplexModel()
+    m1.e.add(Item(name="A"))
+    m1.e.add(Item(name="B"))
+    m1.e.add(Item(name="C"))
+    m1.d = m1.e.vals
+
+    dict1 = m1.to_dict()
+    json1 = m1.to_json_string()
+    
+    m2 = m1.copy()
+    json2 = m2.to_json_string()
+    dict2 = m2.to_dict()
+    
+    assert json1 == json2
+    assert dict1 == dict2
+
+
+
+    
+
+    

@@ -155,9 +155,6 @@ class Map(Generic[K,V]):
     def __len__(self):
         return len(self.data)
 
-    def __str__(self):
-        return f"<Map from {self.key_type.__name__} to {self.count} {self.val_type.__name__}>"
-    
     def __eq__(self, other):
         if id(self) == id(other):
             return True
@@ -169,6 +166,20 @@ class Map(Generic[K,V]):
         except:
             return False
 
+    def __str__(self):
+        v = self.val_type.__name__
+        k = self.key_type.__name__
+        match self.count:
+            case 0:
+                return f"Empty Map<{k},{v}>"
+            case 1:
+                return f"1 {v} by {k}"
+            case n:
+                return f"{n} {v}s by {k}"
+    
+    def __repr__(self):
+        return f"{self!s}"
+    
 
 def map(k: Type[K], v: Type[V], get_key, *args) -> Map[K, V]:
     """

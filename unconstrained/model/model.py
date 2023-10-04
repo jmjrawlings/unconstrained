@@ -7,18 +7,20 @@ library
 
 from ..prelude import *
 import attrs
+import json
 from attrs import define, field
-from cattrs import Converter
-from uuid import UUID as Id, uuid4
+from cattrs.preconf.json import make_converter
+from uuid import UUID, uuid4
 from pendulum.date import Date
 from pendulum.datetime import DateTime
 from pendulum.period import Period
-from typing import Type, Callable, TypeVar
+from typing import Type, Callable, TypeVar, Any, get_origin
+
 
 M = TypeVar("M", bound="BaseModel")
 
 
-def id_field(**kwargs) -> Id:
+def id_field(**kwargs) -> UUID:
     return field(factory=uuid4, converter=to_id, **kwargs)
 
 
@@ -43,7 +45,7 @@ def seq_field(ty: Type[T], **kwargs) -> Seq[T]:
     return field(factory=cls, converter=cls.parse, **kwargs)
 
 
-def map_field(val_type: Type[V], key_type: Type[K] = Id, get_key: Callable[[V], K] = dot.id, **kwargs) -> Map[K,V]:
+def map_field(val_type: Type[V], key_type: Type[K] = UUID, get_key: Callable[[V], K] = dot.id, **kwargs) -> Map[K,V]:
     cls = Map.module(key_type, val_type, get_key)
     return field(factory=cls, converter=cls.parse, **kwargs)
 
@@ -84,7 +86,105 @@ def optional(f, **kwargs):
     return field(default=default, converter=converter)
 
 
-converter = Converter()
+json_converter = make_converter()
+
+def register_datetime():
+
+    from pendulum.parser import parse
+
+    def unstructure(dt: DateTime):
+        return dt.to_iso8601_string()
+
+    def structure(s: str, _):
+        dt = parse(s)
+        if isinstance(dt, DateTime):
+            return dt
+        raise ValueError(s)
+    
+    json_converter.register_unstructure_hook(DateTime, unstructure)
+    json_converter.register_structure_hook(DateTime, structure)
+
+    
+def register_uuid():
+
+    def unstructure(id: UUID):
+        return id.hex
+    
+    def structure(payload, _):
+        id = UUID(payload)
+        return id
+
+    json_converter.register_unstructure_hook(UUID, unstructure)
+    json_converter.register_structure_hook(UUID, structure)
+
+
+def register_seq():
+    
+    def typecheck(cls: Type):
+        if get_origin(cls) == Seq:
+            return True
+        return False
+        
+    def structure(cls: Type[Seq]):
+        
+        def f(payload, c: Type[Seq]):
+            seq = c()
+            for record in payload:
+                item = json_converter.unstructure(record, cls.type)
+                seq.add(item)
+            return seq
+        
+        return f
+        
+    def unstructure(cls: Type[Seq]):
+        
+        def f(seq: Seq):
+            payload = json_converter.unstructure(seq.data, list)
+            return payload
+        
+        return f
+        
+    json_converter.register_structure_hook_factory(typecheck, structure)
+    json_converter.register_unstructure_hook_factory(typecheck, unstructure)
+
+
+def register_map():
+    
+    def typecheck(cls: Type):
+        if get_origin(cls) == Map:
+            return True
+        return False
+    
+    def structure(cls: Type[Map]):
+        
+        def f(payload: dict, cls: Type[Map]):
+            map = cls()
+            for k,v in payload.items():
+                key = json_converter.structure(k, cls.key_type)
+                item = json_converter.structure(v, cls.val_type)
+                map.data[key] = item
+
+            return map
+        
+        return f
+        
+    def unstructure(cls: Type[Map]):
+                
+        def f(map: Map):
+            payload = json_converter.unstructure(map.data, dict)
+            return payload
+        
+        return f
+        
+    json_converter.register_structure_hook_factory(typecheck, structure)
+    json_converter.register_unstructure_hook_factory(typecheck, unstructure)
+
+
+register_datetime()
+register_uuid()
+register_seq()
+register_map()
+
 
 @define
 class BaseModel:
@@ -98,7 +198,7 @@ class BaseModel:
         """
         Convert this model to a dictionary
         """
-        payload = converter.unstructure(self)
+        payload = json_converter.unstructure(self)
         return payload
     
 
@@ -106,10 +206,8 @@ class BaseModel:
         """
         Serialize this model as a JSON string
         """
-        payload = self.to_dict()
-        string = json.dumps(payload, **kwargs)
-        return string
-    
+        payload = json_converter.dumps(self, **kwargs)
+        return payload
 
     def to_file(self, path, **kwargs) -> Path:
         """
@@ -130,7 +228,7 @@ class BaseModel:
         given dictionary
         """
         try:
-            return converter.structure(dict, cls)
+            return json_converter.structure(dict, cls)
         except Exception as e:
             raise e
         
@@ -140,8 +238,8 @@ class BaseModel:
         """
         Create an object of this type from a json string
         """
-        dict = json.loads(string)
-        return cls.from_dict(dict)
+        model = json_converter.loads(string,cls)
+        return model
 
 
     @classmethod
@@ -162,7 +260,6 @@ class BaseModel:
         """
         Create a deep copy of this object - no references are shared
         """
-        payload = self.to_dict()
-        instance = self.from_dict(payload)
+        payload = self.to_json_string()
+        instance = self.from_json_string(payload)
         return instance
-    
