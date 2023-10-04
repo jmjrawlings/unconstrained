@@ -137,9 +137,6 @@ class Seq(Generic[T]):
 
     def __len__(self):
         return len(self.data)
-
-    def __str__(self):
-        return f"Sequence of {self.count} {self.type.__name__}"
     
     def __eq__(self, other):
         if id(self) == id(other):
@@ -151,7 +148,19 @@ class Seq(Generic[T]):
             return True                
         except:
             return False
+        
 
+    def __str__(self):
+        match self.count:
+            case 0:
+                return f"0 {self.type.__name__}s"
+            case 1:
+                return f"1 {self.type.__name__}"
+            case n:
+                return f"{n} {self.type.__name__}s"
+
+    def __repr__(self):
+        return f"{self!s}"
 
 def seq(type: Type[T], *args) -> Seq[T]:
     """

@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Type, TypeVar, Union
-from uuid import UUID as Id
+from uuid import UUID
 
 import pandas as pd
 import pendulum as pn
@@ -306,10 +306,12 @@ def to_existing_filepath(value) -> Path:
     return to_filepath(value, existing=True)
 
 
-def to_id(value: Any = None) -> Id:
-    if isinstance(value, Id):
+def to_id(value: Any = None) -> UUID:
+    if isinstance(value, UUID):
         return value
-    elif isinstance(x := getattr(value, 'id'), Id):
+    elif isinstance(value, str):
+        return UUID(value)
+    elif isinstance(x := getattr(value, 'id',None), UUID):
         return x
     else:
         raise TypeError(f"Expected a UUID, got a {value}")

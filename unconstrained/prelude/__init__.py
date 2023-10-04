@@ -14,7 +14,6 @@ from .prelude import (
     Duration,
     Period,
     Path,
-    Id,
     to_bool,
     middle_time,
     to_date,
@@ -40,7 +39,8 @@ from .prelude import (
     log,
     Enum,
     range1,
-    enumerate1
+    enumerate1,
+    UUID
 )
 from .seq import Seq, seq, flatten
 from .map import Map, map, K, V
