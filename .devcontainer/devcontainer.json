@@ -56,6 +56,8 @@
             "extensions": [
                 // Offical python plugin
                 "ms-python.python",
+                // Python debugging
+                "ms-python.debugpy",
                 // Jupyter notebook integration
                 "ms-toolsai.jupyter",
                 // MiniZinc syntax highlighting
