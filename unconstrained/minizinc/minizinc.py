@@ -123,11 +123,11 @@ def get_driver() -> Driver:
     return driver
 
 
-def get_available_solvers() -> Map[str, Solver]:
+def get_available_solvers() -> Map[str, Solver, "id"]:
     """
     Get the available solvers
     """
-    solvers = Map.create(str, Solver, dot.id)
+    solvers = Map(str, Solver, "id")
     driver = get_driver()
 
     for tag, tag_solvers in driver.available_solvers(True).items():
@@ -782,7 +782,7 @@ def set_(*exprs, comments=None, newline=False, pad=10):
         add a newline after each member?
     """
 
-    list = seq(object, *exprs).map(value)
+    list = Seq(object, *exprs).map(value)
     members = []
     for i, item in enumerate(list):
         string = str(item)
