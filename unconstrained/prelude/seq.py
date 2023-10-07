@@ -2,8 +2,6 @@ from .prelude import *
 from typing import Generic, Any, TypeVar, List
 from itertools import zip_longest
 
-__cache__ = {}
-
 def flatten(*args):
     """
     Flatten the given arguments by yielding individual
@@ -32,20 +30,18 @@ class Seq(Generic[T]):
     A sequence of elements of type T
     """
     optional : bool = False
-    type : Type[T]
-    data : List[T]
-        
-    def __init__(self, *args):
+            
+    def __init__(self, t: Type[T],  *args):
+        self.type = t
         self.data = []
         for item in self.yield_from(args):
             self.data.append(item)
     
-    @classmethod
-    def yield_from(cls, args):
+    def yield_from(self, args):
         for item in flatten(args):
-            if isinstance(item, cls.type):
+            if isinstance(item, self.type):
                 yield item
-            elif (cls.optional and item is None):
+            elif (self.optional and item is None):
                 yield item
             else:
                 raise TypeError(f"Could not add {item} of type {type(item)} to sequence of type {cls.type}")
@@ -58,66 +54,27 @@ class Seq(Generic[T]):
         
     def filter(self, f : Callable[[T], bool]) -> "Seq[T]":
         """ Filter the sequence with the given function """
-        self.__class__(filter(f, self))
+        self.__class__(type, filter(f, self))
         return self
     
-    def map(self, f, type: Type[U] = object) -> "Seq[U]":
+    def map(self, f: Callable[[T],U], type: Type[U] = object) -> "Seq[U]":
         """ Map the given function of the sequence """
-        cls = self.module(type)
-        seq = cls(map(f, self))
+        seq = self.__class__(type, (f(x) for x in self))
         return seq
+    
+    def create(self: "Seq[T]", *args) -> "Seq[T]":
+        return self.__class__(self.type, *args)    
         
     def copy(self):
-        seq = self.__class__()
+        seq = self.__class__(self.type)
         seq.data = self.data.copy()
         return seq
 
-    @staticmethod
-    def module(t: Type[T]) -> Type["Seq[T]"]:
-        """
-        Create or return the class representing
-        a sequence of type T
-        """
-
-        if t in __cache__:
-            return __cache__[t]
-        
-        class Sequence(Seq[T]): #type:ignore 
-            type = t #type:ignore
-
-        __cache__[t] = Sequence
-        return Sequence
-
-    @staticmethod
-    def list(*args) -> "Seq[Any]":
-        """
-        Create an untyped sequence from
-        the given arguments
-        """
-        cls = Seq.module(object)
-        seq = cls(args)
-        return seq
-    
-    @staticmethod
-    def create(t: Type[T], *args) -> "Seq[T]":
-        """
-        Create an untyped sequence from
-        the given arguments
-        """
-        cls = Seq.module(t)
-        seq = cls(args)
-        return seq
-    
-    @classmethod
-    def parse(cls, arg):
-        """ 
-        Parse the given value as an instance of
-        this class
-        """
-        if isinstance(arg, cls):
-            return arg
-        return cls(arg)
-
+    def parse(self, obj) -> "Seq[T]":
+        if isinstance(obj, self.__class__):
+            if obj.type == self.type:
+                return obj
+        return self.create(obj)
 
     @property
     def count(self):
@@ -127,7 +84,7 @@ class Seq(Generic[T]):
         self.add(other)
 
     def __add__(self, other):
-        return self.__class__(self, other)
+        return self.__class__(self.type, self, other)
 
     def __iter__(self):
         return iter(self.data)
@@ -162,10 +119,10 @@ class Seq(Generic[T]):
     def __repr__(self):
         return f"{self!s}"
 
-def seq(type: Type[T], *args) -> Seq[T]:
+def lst(*args) -> Seq[Any]:
     """
     Create a sequence of the given type
     from the given arguments
     """
-    seq = Seq.create(type, args)
+    seq = Seq(object, args)
     return seq

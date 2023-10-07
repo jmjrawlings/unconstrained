@@ -1,6 +1,6 @@
 from .prelude import *
-from .seq import seq
-from typing import Generic, TypeVar, Callable, Type, Dict
+from .seq import Seq
+from typing import Generic, TypeVar, Callable, Type, Dict, Literal, LiteralString
 from itertools import zip_longest
 from uuid import UUID
 
@@ -9,28 +9,36 @@ __cache__ = {}
 K = TypeVar("K")
 V = TypeVar("V")
 U = TypeVar("U")
+A = TypeVar("A", bound=LiteralString)
+Id = Literal["id"]
+Name = Literal["name"]
 
-class Map(Generic[K,V]):
+class Map(Generic[K,V,A]):
     """
     A mapping from keys to values where the key
     exists as a field stored on the value (eg: item.id)
     """
-    key_type : Type[K]
-    val_type : Type[V]
-    get_key  : Callable[[V],K]
-    data     : Dict[K, V]
-                    
-    def __init__(self, *args):
+    key_type  : Type[K]
+    val_type  : Type[V]
+    key_field : str
+    data      : Dict[K, V]
+                        
+    def __init__(self, key_type, val_type, key_field, *args):
+        self.key_type = key_type
+        self.val_type = val_type
+        self.key_field = key_field
         self.data = {}
         for val in self.gen_values(args):
             key = self.get_key(val)
             self.data[key] = val
-    
-    @classmethod
-    def gen_values(cls, *args):
+
+    def get_key(self, a):
+        return getattr(a, self.key_field)
+
+    def gen_values(self, *args):
         
         def gen(arg):
-            if isinstance(arg, cls.val_type):
+            if isinstance(arg, self.val_type):
                 yield arg
             elif isinstance(arg, dict):
                 yield from gen(arg.values())
@@ -44,16 +52,16 @@ class Map(Generic[K,V]):
                 yield from gen(arg())
             else:
                 raise TypeError(arg)
-            
-        yield from gen(args)            
 
-    @classmethod
-    def gen_keys(cls, *args):
+        for arg in args:
+            yield from gen(arg)         
+
+    def gen_keys(self, *args):
 
         def gen(arg):
-            if isinstance(arg, cls.key_type):
+            if isinstance(arg, self.key_type):
                 yield arg
-            elif isinstance(arg, cls.val_type):
+            elif isinstance(arg, self.val_type):
                 yield cls.get_key(arg) #type:ignore
             elif hasattr(arg, '__iter__'):
                 if isinstance(arg, str):
@@ -70,11 +78,11 @@ class Map(Generic[K,V]):
 
     @property
     def keys(self):
-        return seq(self.key_type, self.data.keys())
+        return Seq(self.key_type, self.data.keys())
 
     @property
     def vals(self):
-        return seq(self.val_type, self.data.values())
+        return Seq(self.val_type, self.data.values())
 
     def add(self, *args):
         """ Add to this list, a mutable operation """
@@ -83,9 +91,9 @@ class Map(Generic[K,V]):
             self.data[key] = val
         return self
         
-    def filter(self, f : Callable[[V], bool]) -> "Map[K, V]":
+    def filter(self, f : Callable[[V], bool]) -> "Map[K, V, A]":
         """ Filter the sequence with the given function """
-        map = self.__class__(filter(f, self.vals))
+        map = self.create(filter(f, self.vals))
         return map
     
     def to_dict(self, f: Callable[[V],U]=id) -> "Dict[K, U]":
@@ -94,45 +102,23 @@ class Map(Generic[K,V]):
         return dict
         
     def copy(self):
-        seq = self.__class__()
+        seq = self.create()
         seq.data = self.data.copy()
         return seq
-
-    @staticmethod
-    def from_id(v: Type[V]):
-        return Map.module(UUID, v, get_id)
     
-    @classmethod
-    def parse(cls, arg):
+    def parse(self, arg):
         """
         Parse the given value as an instance of this class
         """
-        if isinstance(arg, cls):
-            return arg
-        map = cls(arg)
+        if isinstance(arg, self.__class__):
+            if arg.key_type == self.key_type:
+                if arg.val_type == self.val_type:
+                    return arg
+        map = self.create(arg)
         return map
-
-    @staticmethod
-    def module(k: Type[K], v: Type[V], get_key) -> Type["Map[K,V]"]:
-        uid = hash((k,v, get_key))
-        if uid in __cache__:
-            return __cache__[uid]
-        
-        def get(_, v):
-            return get_key(v)
-        
-        class Module(Map[K,V]):  # type:ignore
-            key_type = k         # type:ignore
-            val_type = v         # type:ignore
-            get_key  = get       # type:ignore
-
-        __cache__[uid] = Module
-        return Module
     
-    @staticmethod
-    def create(k: Type[K], v: Type[V], get_key, *args) -> "Map[K,V]":
-        cls = Map.module(k, v, get_key)
-        map = cls(args)
+    def create(self, *args) -> "Map[K,V,A]":
+        map = self.__class__(self.key_type, self.val_type, self.key_field, *args)
         return map
 
     @property
@@ -147,7 +133,7 @@ class Map(Generic[K,V]):
         self.add(other)
 
     def __add__(self, other):
-        return self.__class__(self, other)
+        return self.create  (self, other)
 
     def __iter__(self):
         return iter(self.data.values())
@@ -179,19 +165,7 @@ class Map(Generic[K,V]):
     
     def __repr__(self):
         return f"{self!s}"
-    
 
-def map(k: Type[K], v: Type[V], get_key, *args) -> Map[K, V]:
-    """
-    Create a sequence of the given type
-    with the arguments provided
-    """
-    cls = Map.module(k, v, get_key)
-    seq = cls(args)
-    return seq
 
-def get_id(x):
-    return x.id
-
-def id_map(k: Type[K], v: Type[V], *args) -> Map[K,V]:
-    return map(k, v, get_id, *args)
+def id_map(v: Type[V], *args) -> Map[UUID,V,Id]:
+    return Map(UUID, v, "id", *args)

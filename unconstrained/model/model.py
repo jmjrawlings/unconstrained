@@ -41,13 +41,29 @@ def float_field(default=0.0, **kwargs) -> float:
 
 
 def seq_field(ty: Type[T], **kwargs) -> Seq[T]:
-    cls = Seq.module(ty)
-    return field(factory=cls, converter=cls.parse, **kwargs)
+    
+    def factory():
+        return Seq(ty)
+    
+    empty = factory()    
+    
+    def convert(obj):
+        return empty.parse(obj)
+    
+    return field(factory=factory, converter=convert, **kwargs)
 
 
-def map_field(val_type: Type[V], key_type: Type[K] = UUID, get_key: Callable[[V], K] = dot.id, **kwargs) -> Map[K,V]:
-    cls = Map.module(key_type, val_type, get_key)
-    return field(factory=cls, converter=cls.parse, **kwargs)
+def map_field(val_type: Type[V], key_type: Type[K] = UUID, key_field="id", **kwargs):
+
+    def factory():
+        return Map(key_type, val_type, key_field)
+    
+    empty = factory()
+            
+    def convert(obj):
+        return empty.parse(obj)
+
+    return field(factory=factory, converter=convert, **kwargs)
 
 
 def dict_field(**kwargs):
@@ -124,13 +140,16 @@ def register_seq():
         if get_origin(cls) == Seq:
             return True
         return False
-        
+  
+       
     def structure(cls: Type[Seq]):
-        
-        def f(payload, c: Type[Seq]):
-            seq = c()
+                        
+        t : Type = cls.__args__[0] #type:ignore
+                        
+        def f(payload, c: Type[Seq]):  
+            seq = c(t)
             for record in payload:
-                item = json_converter.unstructure(record, cls.type)
+                item = json_converter.structure(record, t)
                 seq.add(item)
             return seq
         
@@ -149,21 +168,24 @@ def register_seq():
 
 
 def register_map():
-    
+            
     def typecheck(cls: Type):
         if get_origin(cls) == Map:
             return True
         return False
     
     def structure(cls: Type[Map]):
-        
+        # eg: Map[UUID, Item, Id]                
+        type_args = cls.__args__ # type:ignore
+        key_type = type_args[0]
+        val_type = type_args[1]
+        key_field = type_args[2].__args__[0]
+                
         def f(payload: dict, cls: Type[Map]):
-            map = cls()
+            map = cls(key_type, val_type, key_field)
             for k,v in payload.items():
-                key = json_converter.structure(k, cls.key_type)
-                item = json_converter.structure(v, cls.val_type)
-                map.data[key] = item
-
+                item = json_converter.structure(v, val_type)
+                map.add(item)
             return map
         
         return f

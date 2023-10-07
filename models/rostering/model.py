@@ -15,8 +15,8 @@ class Shift(BaseModel):
 
 @define
 class ShiftRequest(BaseModel):
-    shift_id : Id = id_field()
-    nurse_id : Id = id_field()
+    shift_id : UUID = id_field()
+    nurse_id : UUID = id_field()
 
 @define
 class Model(BaseModel):

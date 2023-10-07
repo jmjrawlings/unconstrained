@@ -42,5 +42,5 @@ from .prelude import (
     enumerate1,
     UUID
 )
-from .seq import Seq, seq, flatten
-from .map import Map, map, K, V
+from .seq import Seq, Seq, flatten, lst
+from .map import Map, K, V, id_map, Id
