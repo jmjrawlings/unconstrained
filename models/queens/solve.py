@@ -4,7 +4,7 @@ from .model import Model
 
 async def solve(model : Model, options : mz.SolveOptions, **kwargs):
     """
-    Solve the scenario with the given options
+    Solve the model with the given options
     """
             
     mzn = f"""
@@ -18,13 +18,16 @@ async def solve(model : Model, options : mz.SolveOptions, **kwargs):
     % The Queen in column i is in row q[i]
     array [N] of var N: q; 
             
-    constraint % Each queen is in a different row
+    % Each queen is in a different row
+    constraint 
         alldifferent(q); 
 
-    constraint % Upwards diagonal
+    % Upwards diagonal
+    constraint 
         alldifferent([ q[i] + i | i in N]); 
 
-    constraint % Downwards diagonal
+    % Downwards diagonal
+    constraint 
         alldifferent([ q[i] - i | i in N]); 
     
     solve ::
@@ -40,7 +43,7 @@ async def solve(model : Model, options : mz.SolveOptions, **kwargs):
 
         array = result['q']
         for i, row in enumerate(array):
-            queen = model.queens[i]
+            queen = model.queens.get(i)
             queen.col = i + 1
             queen.row = row
 
