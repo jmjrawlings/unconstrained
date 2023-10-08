@@ -36,7 +36,10 @@ class Seq(Generic[T]):
         self.data = []
         for item in self.yield_from(args):
             self.data.append(item)
-    
+
+    def get(self, idx: int) -> T:
+        return self.data[idx]
+
     def yield_from(self, args):
         for item in flatten(args):
             if isinstance(item, self.type):
