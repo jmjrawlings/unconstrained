@@ -1,5 +1,5 @@
 from .prelude import *
-from typing import Generic, Any, TypeVar, List
+from typing import Generic, Any
 from itertools import zip_longest
 
 def flatten(*args):

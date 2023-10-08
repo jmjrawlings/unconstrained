@@ -4,14 +4,11 @@ from typing import Generic, TypeVar, Callable, Type, Dict, Literal, LiteralStrin
 from itertools import zip_longest
 from uuid import UUID
 
-__cache__ = {}
-
 K = TypeVar("K")
 V = TypeVar("V")
 U = TypeVar("U")
 A = TypeVar("A", bound=LiteralString)
 Id = Literal["id"]
-Name = Literal["name"]
 
 class Map(Generic[K,V,A]):
     """
@@ -20,10 +17,10 @@ class Map(Generic[K,V,A]):
     """
     key_type  : Type[K]
     val_type  : Type[V]
-    key_field : str
+    key_field : A
     data      : Dict[K, V]
                         
-    def __init__(self, key_type, val_type, key_field, *args):
+    def __init__(self, key_type: Type[K], val_type: Type[V], key_field: A, *args):
         self.key_type = key_type
         self.val_type = val_type
         self.key_field = key_field
