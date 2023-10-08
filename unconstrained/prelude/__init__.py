@@ -43,4 +43,4 @@ from .prelude import (
     UUID
 )
 from .seq import Seq, Seq, flatten, lst
-from .map import Map, K, V, id_map, Id
+from .map import Map, K, V, A, id_map, Id, Literal, LiteralString

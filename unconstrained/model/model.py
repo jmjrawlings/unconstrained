@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 from pendulum.date import Date
 from pendulum.datetime import DateTime
 from pendulum.period import Period
-from typing import Type, Callable, TypeVar, Any, get_origin
+from typing import Type, TypeVar, Any, get_origin
 
 
 M = TypeVar("M", bound="BaseModel")
@@ -53,8 +53,9 @@ def seq_field(ty: Type[T], **kwargs) -> Seq[T]:
     return field(factory=factory, converter=convert, **kwargs)
 
 
-def map_field(val_type: Type[V], key_type: Type[K] = UUID, key_field="id", **kwargs):
 
+def map_field(key_type: Type[K], val_type: Type[V], key_field : A, **kwargs) -> Map[K,V,A]:
+    
     def factory():
         return Map(key_type, val_type, key_field)
     

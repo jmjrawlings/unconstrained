@@ -12,7 +12,7 @@ def item(name):
     return Item(name=name)
 
 def test_map_with_id_as_key():
-    map = id_map(Item)
+    map : Map[UUID, Item, Id] = id_map(Item)
     map.add(item("A"))
     map.add(item("B"))
     map.add(item("C"), item("D"))
@@ -20,7 +20,8 @@ def test_map_with_id_as_key():
     assert [i.name for i in map] == ["A","B","C","D", "A"]
 
 def test_map_with_property_as_key():
-    map = Map(str, Item, lambda x: x.name)
+    Name = Literal["name"]
+    map : Map[str, Item, Name] = Map(str, Item, "name")
     map.add(item("A"))
     map.add(item("B"))
     map.add(item("C"), item("D"))

@@ -36,7 +36,7 @@ class Item(BaseModel):
 
 @define
 class MapModel(BaseModel):
-    items : Map[UUID, Item, "id"] = map_field(Item)
+    items : Map[UUID, Item, Id] = map_field(UUID, Item, "id")
     
 
 def test_create_map_model():
@@ -71,7 +71,7 @@ class ComplexModel(BaseModel):
     b : float = float_field(default=23.8)
     c : str = str_field(default="xd")    
     d : Seq[Item] = seq_field(Item)
-    e : Map[UUID, Item, Id] = map_field(Item)
+    e : Map[UUID, Item, Id] = map_field(UUID, Item, "id")
 
 
 def test_model_serde():
