@@ -18,7 +18,7 @@ def create_chart_data(model : Model):
     return df
 
 
-def plot(model : Model) -> Chart:
+def plot(model : Model):
     data = create_chart_data(model)
     base = (alt
         .Chart(data)
@@ -32,3 +32,5 @@ def plot(model : Model) -> Chart:
     texts = base.mark_text(color='white', size=14).encode(text='queen:N')
     chart = rects + texts
     return chart
+
+Model.plot = plot

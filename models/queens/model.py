@@ -1,16 +1,22 @@
 from unconstrained import *
 
+
 @define
 class Queen(BaseModel):
     number : int = int_field()
     row : int = int_field()
     col : int = int_field()
+    
 
 @define
 class Model(BaseModel):
     name : str = str_field("Queens")
     n : int = int_field(5)
     queens : Seq[Queen] = seq_field(Queen)
+
+    def plot(self):
+        return ch.Chart()
+
 
 def create(n=3) -> Model:
     """
