@@ -9,8 +9,9 @@
             "purpose": [
                 "debug-test"
             ],
-            "console": "integratedTerminal",
-            "justMyCode": true
+            "console": "internalConsole",
+            // "justMyCode": true
+            "justMyCode": false
         }
     ]
 }
