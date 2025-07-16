@@ -1,13 +1,12 @@
 # ********************************************************
 # Key Arguments
 # ********************************************************
-ARG UBUNTU_VERSION=23.04
+ARG UBUNTU_VERSION=24.04
 ARG PYTHON_VERSION=3.11
-ARG DAGGER_VERSION=0.8.7
-ARG MINIZINC_VERSION=2.7.6
+ARG MINIZINC_VERSION=2.9.3
 ARG MINIZINC_HOME=/usr/local/share/minizinc
-ARG ORTOOLS_VERSION=9.7
-ARG ORTOOLS_BUILD=2996
+ARG ORTOOLS_VERSION=9.14
+ARG ORTOOLS_BUILD=6206
 ARG ORTOOLS_HOME=/opt/ortools
 ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
@@ -26,7 +25,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Google OR-Tools solver for MiniZinc is also installed
 #
 # ********************************************************
-FROM minizinc/minizinc:${MINIZINC_VERSION} as minizinc-builder
+FROM minizinc/minizinc:${MINIZINC_VERSION} AS minizinc-builder
 
 # Install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -45,27 +44,26 @@ ARG ORTOOLS_TAR_NAME=or-tools_amd64_ubuntu-${UBUNTU_VERSION}_cpp_v${ORTOOLS_VERS
 ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTOOLS_VERSION}/${ORTOOLS_TAR_NAME}
 ARG ORTOOLS_DIR_NAME=or-tools_x86_64_Ubuntu-${UBUNTU_VERSION}_cpp_v${ORTOOLS_VERSION_BUILD}
 
-# Download and unpack the C++ build for this OS
-RUN wget -c ${ORTOOLS_TAR_URL} && \
+# # Download and unpack the C++ build for this OS
+RUN wget -c ${ORTOOLS_TAR_URL} && \ 
     tar -xzvf ${ORTOOLS_TAR_NAME}
 
 # Move the files to the correct location
 RUN mv ${ORTOOLS_DIR_NAME} ${ORTOOLS_HOME} && \
     cp ${ORTOOLS_HOME}/share/minizinc/solvers/* ${MINIZINC_HOME}/solvers \
-    && cp -r ${ORTOOLS_HOME}/share/minizinc/ortools ${MINIZINC_HOME}/ortools \
-    && ln -s ${ORTOOLS_HOME}/bin/fzn-ortools /usr/local/bin/fzn-ortools
+ && cp -r ${ORTOOLS_HOME}/share/minizinc/cp-sat ${MINIZINC_HOME}/cp-sat \
+ && ln -sf ${ORTOOLS_HOME}/bin/fzn-cp-sat /usr/local/bin/fzn-cp-sat
 
 # Test installation
 RUN echo "var 1..9: x; constraint x > 5; solve satisfy;" \
-    | minizinc --solver com.google.or-tools --input-from-stdin
-
+    | minizinc --solver cp-sat --input-from-stdin
 
 # ********************************************************
 # python-base
 #
 # Base python used to install packages
 # ********************************************************
-FROM python:${PYTHON_VERSION} as python-base
+FROM python:${PYTHON_VERSION} AS python-base
 
 ARG PYTHON_VENV
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -187,12 +185,7 @@ RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/comp
 # Give Docker access to the non-root user
 RUN groupadd docker \
     && usermod -aG docker ${USER_NAME}
-
-# Install Dagger
-ARG DAGGER_VERSION
-RUN cd /usr/local \
-    && curl -L https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=${DAGGER_VERSION} sh
-
+    
 # Install Github CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
