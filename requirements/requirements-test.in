@@ -1,5 +1,0 @@
--r requirements-prod.in
-vega-datasets
-pytest
-pytest-asyncio
-pytest-watch

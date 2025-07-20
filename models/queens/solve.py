@@ -1,5 +1,4 @@
-from unconstrained import *
-from unconstrained import minizinc as mz
+from unconstrained import mz
 from .model import Model
 
 async def solve(model : Model, options : mz.SolveOptions, **kwargs):

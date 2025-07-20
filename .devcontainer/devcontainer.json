@@ -6,38 +6,33 @@
         "context": "..",
         "target": "dev"
     },
+    "workspaceFolder": "/app",
     "mounts": [
-        // [Optional] Mount the hosts docker engine
-        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-        // [Optional] Use a volume to install VSCode extensions, see https://code.visualstudio.com/remote/advancedcontainers/avoid-extension-reinstalls
-        // "source=unconstrained-vscode-extensions,target=/root/.vscode-server/extensions,type=volume"
+        "source=${localWorkspaceFolder},target=/app,type=bind"
     ],
-    "remoteEnv": {
-        // [Optional] Add the local scripts directory to PATH
-        // "PATH": "${containerEnv:PATH}:/workspaces/unconstrained/scripts"
-    },
+    "postCreateCommand": "uv sync --frozen --group dev",
     // VSCode settings inside the container
     "customizations": {
         "vscode": {
             "settings": {
                 // Python location
-                "python.defaultInterpreterPath": "/opt/venv/bin",
-                "python.pythonPath": "/opt/venv/bin",
-                "python.disableInstallationCheck": true,
+                // "python.defaultInterpreterPath": "/opt/venv/bin",
+                // "python.pythonPath": "/opt/venv/bin",
+                // "python.disableInstallationCheck": true,
                 // Typechecking and linting
-                "python.languageServer": "Pylance",
-                "python.analysis.typeCheckingMode": "basic",
-                "python.analysis.diagnosticSeverityOverrides": {
-                    "reportUnboundVariable": "information",
-                    "reportImplicitStringConcatenation": "warning"
-                },
-                // Pytest integration
-                "python.testing.pytestEnabled": true,
-                "python.testing.pytestArgs": [
-                    "tests"
-                ],
-                "python.testing.unittestEnabled": false,
-                "python.testing.nosetestsEnabled": false,
+                // "python.languageServer": "Pylance",
+                // "python.analysis.typeCheckingMode": "basic",
+                // "python.analysis.diagnosticSeverityOverrides": {
+                //     "reportUnboundVariable": "information",
+                //     "reportImplicitStringConcatenation": "warning"
+                // },
+                // // Pytest integration
+                // "python.testing.pytestEnabled": true,
+                // "python.testing.pytestArgs": [
+                //     "tests"
+                // ],
+                // "python.testing.unittestEnabled": false,
+                // "python.testing.nosetestsEnabled": false,
                 // Zsh Shell
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.profiles.linux": {
@@ -49,8 +44,8 @@
                     }
                 },
                 // Misc
-                "editor.detectIndentation": false,
-                "editor.insertSpaces": true,
+                // "editor.detectIndentation": false,
+                // "editor.insertSpaces": true,
                 "telemetry.telemetryLevel": "off"
             },
             "extensions": [
@@ -62,14 +57,6 @@
                 "ms-toolsai.jupyter",
                 // MiniZinc syntax highlighting
                 "dekkerone.minizinc",
-                // D2 language support
-                "Terrastruct.d2",
-                // Docker support
-                "ms-azuretools.vscode-docker",
-                // Dagger LSP
-                "Dagger.dagger",
-                // Github actions
-                "github.vscode-github-actions"
             ]
         }
     },

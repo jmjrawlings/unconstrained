@@ -1,6 +1,4 @@
-from unconstrained import *
-from unconstrained import minizinc as mz
-from unconstrained import charting as ch
+from unconstrained import mz, save_chart
 from models import queens
 
 async def test_solve(minizinc_options, tmp_path):
@@ -13,7 +11,7 @@ async def test_solve(minizinc_options, tmp_path):
 
     chart = queens.plot(scenario)
     
-    ch.save(
+    save_chart(
         chart, 
         path=tmp_path / f'{scenario.name}.html',
         width=400,

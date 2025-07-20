@@ -1,7 +1,5 @@
-from unconstrained.charting import *
-from .model import *
-import pandas as pd
-
+import altair as alt
+from .model import Model
 
 def create_chart_data(model : Model):    
     records = []
@@ -14,8 +12,7 @@ def create_chart_data(model : Model):
             x = queen.col,
             x2 = queen.col + 1
         ))
-    df = pd.DataFrame.from_records(records)
-    return df
+    return records
 
 
 def plot(model : Model):
@@ -32,5 +29,3 @@ def plot(model : Model):
     texts = base.mark_text(color='white', size=14).encode(text='queen:N')
     chart = rects + texts
     return chart
-
-Model.plot = plot

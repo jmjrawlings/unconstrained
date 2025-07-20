@@ -2,7 +2,8 @@
 Tests for domain modelling with attrs via BaseModel
 """
 
-from unconstrained import *
+from unconstrained import BaseModel, int_field, str_field, map_field, Id, float_field, seq_field, Seq, Map, define, UUID, Id
+
 
 @define
 class SimpleModel(BaseModel):
@@ -27,7 +28,7 @@ def test_copy_simple_model():
     m1 = SimpleModel()
     m2 = m1.copy()
     assert m1 == m2
-     
+         
 
 @define
 class Item(BaseModel):

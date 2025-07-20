@@ -2,13 +2,12 @@
 # Key Arguments
 # ********************************************************
 ARG UBUNTU_VERSION=24.04
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.12
 ARG MINIZINC_VERSION=2.9.3
 ARG MINIZINC_HOME=/usr/local/share/minizinc
 ARG ORTOOLS_VERSION=9.14
 ARG ORTOOLS_BUILD=6206
 ARG ORTOOLS_HOME=/opt/ortools
-ARG PYTHON_VENV=/opt/venv
 ARG APP_PATH=/app
 ARG USER_NAME=harken
 ARG USER_UID=1000
@@ -28,7 +27,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 FROM minizinc/minizinc:${MINIZINC_VERSION} AS minizinc-builder
 
 # Install required packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
     && rm -rf /var/lib/apt/lists/*
@@ -45,45 +45,18 @@ ARG ORTOOLS_TAR_URL=https://github.com/google/or-tools/releases/download/v${ORTO
 ARG ORTOOLS_DIR_NAME=or-tools_x86_64_Ubuntu-${UBUNTU_VERSION}_cpp_v${ORTOOLS_VERSION_BUILD}
 
 # # Download and unpack the C++ build for this OS
-RUN wget -c ${ORTOOLS_TAR_URL} && \ 
-    tar -xzvf ${ORTOOLS_TAR_NAME}
+RUN wget -c ${ORTOOLS_TAR_URL} \
+    && tar -xzvf ${ORTOOLS_TAR_NAME}
 
 # Move the files to the correct location
-RUN mv ${ORTOOLS_DIR_NAME} ${ORTOOLS_HOME} && \
-    cp ${ORTOOLS_HOME}/share/minizinc/solvers/* ${MINIZINC_HOME}/solvers \
- && cp -r ${ORTOOLS_HOME}/share/minizinc/cp-sat ${MINIZINC_HOME}/cp-sat \
- && ln -sf ${ORTOOLS_HOME}/bin/fzn-cp-sat /usr/local/bin/fzn-cp-sat
+RUN mv ${ORTOOLS_DIR_NAME} ${ORTOOLS_HOME} \
+    && cp ${ORTOOLS_HOME}/share/minizinc/solvers/* ${MINIZINC_HOME}/solvers \
+    && cp -r ${ORTOOLS_HOME}/share/minizinc/cp-sat ${MINIZINC_HOME}/cp-sat \
+    && ln -sf ${ORTOOLS_HOME}/bin/fzn-cp-sat /usr/local/bin/fzn-cp-sat
 
 # Test installation
 RUN echo "var 1..9: x; constraint x > 5; solve satisfy;" \
     | minizinc --solver cp-sat --input-from-stdin
-
-# ********************************************************
-# python-base
-#
-# Base python used to install packages
-# ********************************************************
-FROM python:${PYTHON_VERSION} AS python-base
-
-ARG PYTHON_VENV
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-ENV PIP_NO_CACHE_DIR=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV VIRTUAL_ENV=$PYTHON_VENV
-
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
-
-# Create the python virtual environment
-RUN python -m venv ${PYTHON_VENV}
-
-# Install build dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install pip-tools
 
 # ********************************************************
 # base
@@ -91,9 +64,8 @@ RUN pip install pip-tools
 # Base layer with core dependencies to be used by other
 # layers
 # ********************************************************
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim AS base
 
-ARG PYTHON_VENV
 ARG USER_NAME=harken
 ARG USER_GID=1000
 ARG USER_UID=1000
@@ -102,12 +74,15 @@ ARG OPT_PATH
 ARG MINIZINC_HOME
 ARG ORTOOLS_HOME
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-ENV PIP_NO_CACHE_DIR=1
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_DOWNLOADS=never
+ENV UV_CACHE_DIR=/tmp/uv-cache
+
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV VIRTUAL_ENV=$PYTHON_VENV
-ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+ENV UV_PROJECT_ENVIRONMENT=/home/${USER_NAME}/.venv
+ENV PATH="/home/${USER_NAME}/.venv/bin:$PATH"
 
 # Create our non-root user
 RUN groupadd --gid ${USER_GID} ${USER_NAME} \
@@ -117,22 +92,15 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
     && echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 # Install MiniZinc + ORTools from the build layer
 COPY --from=minizinc-builder $MINIZINC_HOME $MINIZINC_HOME
 COPY --from=minizinc-builder /usr/local/bin/ /usr/local/bin/
 COPY --from=minizinc-builder $ORTOOLS_HOME $ORTOOLS_HOME
 
-USER $USER_NAME     
-
-# ********************************************************
-# python-dev
-# 
-# A python venv with all of the dev dependencies installed
-# ********************************************************
-FROM python-base as python-dev
-
-COPY ./requirements/requirements-dev.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
+USER $USER_NAME
 
 # ********************************************************
 # dev 
@@ -144,7 +112,7 @@ RUN pip-sync ./requirements.txt
 #  
 # See https://code.visualstudio.com/docs/remote/containers
 # ********************************************************
-FROM base as dev
+FROM base AS dev
 
 ARG PYTHON_VENV
 ARG USER_NAME
@@ -152,77 +120,43 @@ ARG USER_UID
 ARG USER_GID
 ARG DEBIAN_FRONTEND
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
 USER root
 
 # Install core packages
 RUN apt-get update \
-    && apt-get install -y\
-    build-essential \
-    curl \
-    ca-certificates \
-    gnupg2 \
-    locales \
-    lsb-release \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Docker CE CLI
-RUN curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
-    && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
-    && apt-get update && apt-get install -y \
-    docker-ce-cli \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Docker Buildx
-COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
-RUN docker buildx version
-
-# Install Docker Compose
-RUN LATEST_COMPOSE_VERSION=$(curl -sSL "https://api.github.com/repos/docker/compose/releases/latest" | grep -o -P '(?<="tag_name": ").+(?=")') \
-    && curl -sSL "https://github.com/docker/compose/releases/download/${LATEST_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose
-
-# Give Docker access to the non-root user
-RUN groupadd docker \
-    && usermod -aG docker ${USER_NAME}
-    
-# Install Github CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && sudo apt update \
-    && sudo apt install gh -y \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install D2 lang
-RUN curl -fsSL https://d2lang.com/install.sh | sh -s --
-
-# Install Act
-RUN cd /usr/local/bin \
-    && wget -c https://github.com/nektos/act/releases/download/v0.2.52/act_Linux_x86_64.tar.gz -O - | tar -xz \
-    && act --version
+ && apt-get install -y\
+        build-essential \
+        curl \
+        ca-certificates \
+        gnupg2 \
+        locales \
+        lsb-release \
+        wget \
+ && rm -rf /var/lib/apt/lists/*
 
 # Install Developer packages
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    autojump \
-    entr \
-    fonts-powerline \
-    openssh-client \
-    micro \
-    less \
-    inotify-tools \
-    htop \                                                  
-    git \    
-    tree \
-    zsh \
-    && rm -rf /var/lib/apt/lists/*
+ && apt-get install -y --no-install-recommends \ 
+        autojump \
+        entr \
+        fonts-powerline \
+        openssh-client \
+        micro \
+        less \
+        inotify-tools \
+        htop \                                                  
+        git \    
+        tree \
+        zsh \
+&& rm -rf /var/lib/apt/lists/*
 
 # Install zsh & oh-my-zsh
 USER ${USER_NAME}
 WORKDIR /home/$USER_NAME
 COPY .devcontainer/.p10k.zsh .p10k.zsh
-RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.3/zsh-in-docker.sh)" -- \
+RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.1/zsh-in-docker.sh)" -- \
     -p git \
     -p docker \
     -p autojump \
@@ -231,66 +165,26 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> ~/.zshrc && \
     .oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
 
-# Install Python dependencies
-COPY --from=python-dev --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
-
-CMD zsh
-
-
-# ********************************************************
-# python-test
-#
-# A python venv with all of the test dependencies installed
-# ********************************************************
-FROM python-base as python-test
-
-COPY ./requirements/requirements-test.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
-
-# ********************************************************
-# test 
-# 
-# Contains python source code, testing code, and all 
-# dependencies required to run the test suite.
-# ********************************************************
-FROM base as test
-
-ARG APP_PATH
-ARG USER_NAME
-ARG USER_GID
-ARG USER_UID
-
-# Create an assign app path
-USER root
-RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
-
-USER ${USER_NAME}
 WORKDIR ${APP_PATH}
-COPY ./unconstrained ./unconstrained
-COPY ./tests ./tests
-COPY ./models ./models
-COPY ./pytest.ini .
 
-COPY --from=python-test --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
+# For devcontainer usage, we want the dependencies pre-installed
+# but source code will be mounted at runtime
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/tmp/uv-cache,uid=${USER_UID},gid=${USER_GID} \
+    uv sync --frozen --group dev --no-install-project
 
-CMD pytest
+# Set up shell to activate virtual environment
+RUN echo 'export PATH="/app/.venv/bin:$PATH"' >> /home/${USER_NAME}/.zshrc
 
-# ********************************************************
-# python-prod
-#
-# A python venv with all of the prod dependencies installed
-# ********************************************************
-FROM python-base as python-prod
-
-COPY ./requirements/requirements-prod.txt ./requirements.txt
-RUN pip-sync ./requirements.txt
+# Default command for devcontainer
+CMD ["sleep", "infinity"]
 
 # ********************************************************
 # prod
 #
-# Contains source code and production dependencies ony
+# Contains source code and production dependencies only
 # ********************************************************
-FROM base as prod
+FROM base AS prod
 
 ARG APP_PATH
 ARG USER_NAME
@@ -300,11 +194,26 @@ ARG USER_UID
 ENV PYTHONOPTIMIZE=2
 ENV PYTHONDONTWRITEBYTECODE=0
 
-# Create an assign app path
+# Create and assign app path
 USER root
 RUN mkdir $APP_PATH && chown -R $USER_NAME $APP_PATH
 
 USER ${USER_NAME}
 WORKDIR ${APP_PATH}
 
-COPY --from=python-prod --chown=${USER_UID}:${USER_GID} ${PYTHON_VENV} ${PYTHON_VENV}
+# Copy dependency files first
+COPY pyproject.toml uv.lock ./
+
+# Install production dependencies only
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv sync --frozen --no-dev --no-install-project
+
+# Copy source code
+COPY ./unconstrained ./unconstrained
+
+# Install the project
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv sync --frozen --no-dev
+    
+# Set the Python path to use uv's virtual environment
+ENV PATH="/app/.venv/bin:$PATH"

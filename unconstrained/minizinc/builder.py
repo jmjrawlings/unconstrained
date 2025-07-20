@@ -1,6 +1,6 @@
-from ..prelude import *
-from typing import List, Set, Union, Literal
+from typing import List, Union, Literal
 from textwrap import indent, dedent
+from ..prelude import flatten, lst, enumerate1
 
 TypeInst = Union[Literal['var'], Literal['par']]
 
@@ -351,7 +351,7 @@ class ModelBuilder:
 
     def add_true(self, x, **kwargs):
         self.add_eq(x, True, **kwargs)
-
+        
 
     def add_multiline_comment(self, x):
         if not x:

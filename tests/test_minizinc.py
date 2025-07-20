@@ -2,7 +2,6 @@
 Tests for the minizinc api
 """
 
-from unconstrained import *
 from unconstrained import minizinc as mz
 from pytest import mark, fixture
 
@@ -125,4 +124,4 @@ def test_get_available_solvers():
 
 @mark.parametrize('tag', [mz.ORTOOLS, mz.CHUFFED, mz.COINBC, mz.GECODE])
 def test_solver_is_available(tag):
-    assert mz.Solver.lookup(tag)
+    assert mz.MzSolver.lookup(tag)

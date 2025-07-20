@@ -1,5 +1,12 @@
-from unconstrained import *
-
+from unconstrained import (
+    BaseModel,
+    define,
+    int_field,
+    str_field,
+    seq_field,
+    Seq,
+    range1
+)
 
 @define
 class Queen(BaseModel):
@@ -13,9 +20,6 @@ class Model(BaseModel):
     name : str = str_field("Queens")
     n : int = int_field(5)
     queens : Seq[Queen] = seq_field(Queen)
-
-    def plot(self):
-        return ch.Chart()
 
 
 def create(n=3) -> Model:

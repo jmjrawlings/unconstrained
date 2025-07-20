@@ -1,4 +1,4 @@
-from unconstrained.prelude import *
+from unconstrained.prelude import Seq
 
 def test_seq_ints():
     assert Seq(int, 1,[2,3,4]) == [1,2,3,4]

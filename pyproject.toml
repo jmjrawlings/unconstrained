@@ -1,0 +1,24 @@
+[project]
+name = "unconstrained"
+version = "0.1.0"
+description = "An example MiniZinc/ORToosl project"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "altair>=5.5.0",
+    "attrs>=25.3.0",
+    "cattrs>=25.1.1",
+    "minizinc>=0.10.0",
+    "pendulum>=3.1.0",
+    "rich>=14.0.0",
+    "strenum>=0.4.15",
+]
+
+[dependency-groups]
+dev = [
+    "ipython>=9.4.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-watch>=4.2.0",
+    "vega-datasets>=0.9.0",
+]

@@ -44,3 +44,55 @@ from .minizinc import (
     FLATTEN_SHAVE,
     FLATTEN_SAC
 )
+from .builder import (
+    ModelBuilder
+)
+
+
+_all__ = [
+    SolveOptions,
+    FlattenOption,
+    Method,
+    Solver,
+    get_solver,
+    get_available_solvers,
+    Result,
+    best_solution,
+    all_solutions,
+    satisfy,
+    solve,
+    Driver,
+    get_driver,
+    Status,
+    ORTOOLS,
+    CHUFFED,
+    GECODE,
+    COINBC,
+    FEASIBLE,
+    OPTIMAL,
+    THRESHOLD,
+    UNSATISFIABLE,
+    ALL_SOLUTIONS,
+    TIMEOUT,
+    ERROR,
+    UNKNOWN,
+    UNBOUNDED,
+    MAXIMIZE,
+    MINIMIZE,
+    SATISFY,
+    INPUT_ORDER,
+    FIRST_FAIL,
+    SMALLEST,
+    DOM_W_DEG,
+    INDOMAIN_MIN,
+    INDOMAIN_MED,
+    INDOMAIN_RANDOM,
+    INDOMAIN_SPLIT,
+    FLATTEN_NONE,
+    FLATTEN_SINGLE_PASS,
+    FLATTEN_TWO_PASS,
+    FLATTEN_USE_GECODE,
+    FLATTEN_SHAVE,
+    FLATTEN_SAC,
+    ModelBuilder
+]
