@@ -27,12 +27,11 @@
                 //     "reportImplicitStringConcatenation": "warning"
                 // },
                 // // Pytest integration
-                // "python.testing.pytestEnabled": true,
-                // "python.testing.pytestArgs": [
-                //     "tests"
-                // ],
-                // "python.testing.unittestEnabled": false,
-                // "python.testing.nosetestsEnabled": false,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": [
+                    "tests"
+                ],
+                "python.testing.unittestEnabled": false,
                 // Zsh Shell
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.profiles.linux": {

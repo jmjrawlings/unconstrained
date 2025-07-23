@@ -11,6 +11,7 @@ from typing import TypedDict
 from shutil import copy
 from attrs import field, define
 from enum import Enum
+from tempfile import gettempdir
 from pendulum import DateTime, Duration, Interval
 from ..prelude import (
     to_filename,
@@ -113,7 +114,7 @@ SATISFY = Method.SATISFY
 
 # Expose supported solvers at top level
 CHUFFED = "chuffed"
-ORTOOLS = "or-tools"
+ORTOOLS = "cp-sat"
 GECODE = "gecode"
 COINBC = "coin-bc"
 
@@ -368,7 +369,7 @@ async def solve(
     model: str,
     options: SolveOptions,
     name: str = "model",
-    debug_path: Path | str = "/tmp",
+    debug_path: Path | str | None = None,
     parameters: None | Dict[str, Any] = None,
     **kwargs,
 ) -> AsyncIterable[Result]:
@@ -378,7 +379,7 @@ async def solve(
     from copy import deepcopy
 
     solver = get_solver(options.solver_id)
-    debug_path = to_directory(debug_path or "/tmp", create=True)
+    debug_path = to_directory(debug_path or gettempdir(), create=True)
 
     # Initial solution
     result = Result(name=name, model_string=model, start_time=now())

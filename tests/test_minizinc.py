@@ -124,4 +124,4 @@ def test_get_available_solvers():
 
 @mark.parametrize('tag', [mz.ORTOOLS, mz.CHUFFED, mz.COINBC, mz.GECODE])
 def test_solver_is_available(tag):
-    assert mz.MzSolver.lookup(tag)
+    assert mz.Solver.lookup(tag)
