@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import AsyncIterable, Tuple, List, Optional, Dict, Any
 from datetime import timedelta
 from minizinc import Method
-from minizinc import Result
-from minizinc import Solver
-from minizinc import Status
+from minizinc import Result as MzResult
+from minizinc import Solver 
+from minizinc import Status as MzStatus
 from minizinc import Instance
 from minizinc import Driver
 from typing import TypedDict
@@ -171,10 +171,10 @@ class Status(Enum):
     UNSATISFIABLE = "unsatisfiable"
     TIMEOUT = "timeout"
     ERROR = "error"
-    UNKNOWN = "unknown"
+    UNKNOWN = "unknown"    
     UNBOUNDED = "unbounded"
     ALL_SOLUTIONS = "all_solutions"
-
+        
     @property
     def has_solution(self):
         return self in [Status.FEASIBLE, Status.OPTIMAL, Status.THRESHOLD]
@@ -269,7 +269,7 @@ FLATTEN_SAC = FlattenOption.SAC
 
 
 @define
-class Result(BaseModel):
+class SolveResult(BaseModel):
     """
     The result of solving a model
     """
@@ -298,25 +298,21 @@ class Result(BaseModel):
     @property
     def solve_time(self) -> Interval:
         return to_interval(self.start_time, self.end_time)
-
+    
     @property
-    def solve_duration(self) -> Duration:
-        return self.solve_time.as_interval()
-
-    @property
-    def elapsed(self):
+    def elapsed(self) -> str:
         return to_elapsed(self.solve_time)
 
     @property
-    def has_objective(self):
+    def has_objective(self) -> bool:
         return self.objective is not None
 
     @property
-    def has_objective_bound(self):
+    def has_objective_bound(self) -> bool:
         return self.objective_bound is not None
 
     @property
-    def has_solution(self):
+    def has_solution(self) -> bool:
         return self.status.has_solution
     
     def get_value(self, name, *indices) -> Any:
@@ -372,7 +368,7 @@ async def solve(
     debug_path: Path | str | None = None,
     parameters: None | Dict[str, Any] = None,
     **kwargs,
-) -> AsyncIterable[Result]:
+) -> AsyncIterable[SolveResult]:
     """
     Solve the given minizinc model.
     """
@@ -382,214 +378,191 @@ async def solve(
     debug_path = to_directory(debug_path or gettempdir(), create=True)
 
     # Initial solution
-    result = Result(name=name, model_string=model, start_time=now())
+    result = SolveResult(name=name, model_string=model, start_time=now())
 
     # Create the MiniZinc Instance
-    try:
-        instance = Instance(solver)
-        instance.add_string(result.model_string)
+    instance = Instance(solver)
+    instance.add_string(result.model_string)
 
-        for param, value in (parameters or {}).items():
-            instance[param] = value
+    for param, value in (parameters or {}).items():
+        instance[param] = value
 
-        with instance.files() as files:
-            for file in files:
-                debug_root = to_filename(name)
-                debug_file = debug_path / f"{debug_root}_{file.name}"
-                copy(file, debug_file)
+    with instance.files() as files:
+        for file in files:
+            debug_root = to_filename(name)
+            debug_file = debug_path / f"{debug_root}_{file.name}"
+            copy(file, debug_file)
 
-                if file.suffix == ".mzn":
-                    result.model_string += file.read_text()
-                    result.model_file = str(debug_file)
-                    file_type = "model"
-                elif file.suffix == ".json":
-                    result.data_string += file.read_text()
-                    result.data_file = str(debug_file)
-                    file_type = "data"
-                elif file.suffix == ".dzn":
-                    result.data_string += file.read_text()
-                    result.data_file = str(debug_file)
-                    file_type = "data"
-                else:
-                    file_type = "???"
-
-                log.info(f'"{name}" {file_type} written to {debug_file}')
-
-        result.method = instance.method
-        result.status = Status.FEASIBLE
-        variables = {key for key in (instance.output or {}).keys() if key != "_checker"}
-
-    # Most likely syntax error
-    except Exception as e:
-        result.error = e.args[0]
-        result.status = Status.ERROR
-        instance = None
-        variables = set()
-        log.error(f"{type(e).__name__}: {result.error}")
-
-    if instance is None:
-        yield result
-        return
-
-    previous = result
-
-    try:
-        mz_result: Result
-
-        async for mz_result in instance.solutions(
-            timeout=options.time_limit,
-            optimisation_level=options.flatten_options.value,
-            free_search="-f" in solver.stdFlags and options.free_search,
-            processes="-p" in solver.stdFlags and options.threads,
-            **kwargs,
-        ):
-            statistics = previous.statistics.copy()
-            statistics.update(mz_result.statistics)  # type:ignore
-
-            result = Result(
-                name=name,
-                iteration=previous.iteration + 1,
-                start_time=previous.start_time,
-                end_time=now(),
-                statistics=statistics,
-                flatten_time=previous.flatten_time,
-                method=previous.method,
-                model_string=previous.model_string,
-                model_file=previous.model_file,
-                status=Status.FEASIBLE,
-                variables=deepcopy(previous.variables),
-            )
-
-            if "flatTime" in statistics:
-                flat_time = statistics.pop("flatTime")
-                result.flatten_time = to_duration(flat_time)
-
-            # No solution - MiniZinc has terminated
-            if mz_result.solution is None:
-                if mz_result.status == Status.OPTIMAL_SOLUTION:
-                    result.variables = previous.variables.copy()
-                    result.objective = previous.objective
-                    result.objective_bound = previous.objective
-                    result.absolute_delta = previous.absolute_gap
-                    result.relative_delta = previous.absolute_delta
-                    result.absolute_gap = 0
-                    result.relative_gap = 0.0
-                    status = OPTIMAL
-
-                elif mz_result.status == Status.UNSATISFIABLE:
-                    status = UNSATISFIABLE
-
-                elif mz_result.status == Status.SATISFIED:
-                    status = FEASIBLE
-
-                elif mz_result.status == Status.UNBOUNDED:
-                    status = UNBOUNDED
-
-                elif mz_result.status == Status.ALL_SOLUTIONS:
-                    status = ALL_SOLUTIONS
-
-                elif mz_result.status == Status.UNKNOWN:
-                    if result.solve_duration > options.time_limit:
-                        status = TIMEOUT
-                    else:
-                        status = UNKNOWN
-
-                else:
-                    status = ERROR
-
-                result.status = status
-
-                for key, value in statistics.items():
-                    log.debug(f'"{name}" {key} = {value}')
-
-                log.log(
-                    logging.INFO if status.has_solution else logging.ERROR,
-                    f'"{name}" returned "{status.name}" after {result.elapsed}',
-                )
-                continue
-
-            # An intermediate solution has been given
-            objective: Optional[int] = None
-            bound: Optional[int] = None
-            abs_gap: Optional[int] = None
-            rel_gap: Optional[float] = None
-            abs_delta: Optional[int] = None
-            rel_delta: Optional[float] = None
-
-            # Extract objective
-            if (objective := mz_result.objective) is not None:  # type:ignore
-                result.objective = int(objective)
-                objective = result.objective
-
-            # Extract objective bound
-            if (bound := statistics.pop("objectiveBound", None)) is not None:  # type:ignore
-                if math.isfinite(bound):
-                    result.objective_bound = int(bound)
-                    bound = result.objective_bound
-
-            # Calculate absolute gap
-            if bound is not None and objective is not None:
-                abs_gap = abs(objective - bound)
-
-            # Calculate relative gap
-            if abs_gap is not None and bound:
-                rel_gap = abs_gap / bound
-
-            # Calculate absolute delta
-            if (objective is not None) and (previous.objective is not None):
-                abs_delta = abs(objective - previous.objective)
-
-            # Calculate relative delta
-            if previous.relative_gap is not None and rel_gap is not None:
-                rel_delta = previous.relative_gap - rel_gap
-
-            # Assign to solution
-            result.objective = objective
-            result.objective_bound = bound
-            result.absolute_gap = abs_gap
-            result.relative_gap = rel_gap
-            result.absolute_delta = abs_delta
-            result.relative_delta = rel_delta
-
-            # Extract solved variables
-            for var in variables:
-                value = mz_result[var]
-                result.variables[var] = value
-
-            if rel_gap is not None:
-                log.debug(
-                    f'"{name}" solution {result.iteration} has objective {result.objective} and gap {rel_gap:.2%} after {result.elapsed}'
-                )
-            elif objective is not None:
-                log.debug(
-                    f'"{name}" solution {result.iteration} has objective {result.objective} after {result.elapsed}'
-                )
+            if file.suffix == ".mzn":
+                result.model_string += file.read_text()
+                result.model_file = str(debug_file)
+                file_type = "model"
+            elif file.suffix == ".json":
+                result.data_string += file.read_text()
+                result.data_file = str(debug_file)
+                file_type = "data"
+            elif file.suffix == ".dzn":
+                result.data_string += file.read_text()
+                result.data_file = str(debug_file)
+                file_type = "data"
             else:
-                log.debug(
-                    f'"{name}" solution {result.iteration} found after {result.elapsed}'
-                )
+                file_type = "???"
+
+            log.info(f'"{name}" {file_type} written to {debug_file}')
+
+    result.method = instance.method
+    result.status = Status.FEASIBLE
+    variables = {key for key in (instance.output or {}).keys() if key != "_checker"}
+    previous = result
+    mz_result: MzResult
+    
+    async for mz_result in instance.solutions(
+        time_limit=options.time_limit,
+        optimisation_level=options.flatten_options.value,
+        free_search="-f" in solver.stdFlags and options.free_search,
+        processes="-p" in solver.stdFlags and options.threads,
+        **kwargs,
+    ):
+        statistics = previous.statistics.copy()
+        statistics.update(mz_result.statistics)  # type:ignore
+
+        result = SolveResult(
+            name=name,
+            iteration=previous.iteration + 1,
+            start_time=previous.start_time,
+            end_time=now(),
+            statistics=statistics,
+            flatten_time=previous.flatten_time,
+            method=previous.method,
+            model_string=previous.model_string,
+            model_file=previous.model_file,
+            status=Status.FEASIBLE,
+            variables=deepcopy(previous.variables),
+        )
+
+        if "flatTime" in statistics:
+            flat_time = statistics.pop("flatTime")
+            result.flatten_time = to_duration(flat_time)
+
+        # No solution - MiniZinc has terminated
+        if mz_result.solution is None:
+            if mz_result.status == MzStatus.OPTIMAL_SOLUTION:
+                result.variables = previous.variables.copy()
+                result.objective = previous.objective
+                result.objective_bound = previous.objective
+                result.absolute_delta = previous.absolute_gap
+                result.relative_delta = previous.absolute_delta
+                result.absolute_gap = 0
+                result.relative_gap = 0.0
+                status = OPTIMAL
+
+            elif mz_result.status == MzStatus.UNSATISFIABLE:
+                status = UNSATISFIABLE
+
+            elif mz_result.status == MzStatus.SATISFIED:
+                status = FEASIBLE
+
+            elif mz_result.status == MzStatus.UNBOUNDED:
+                status = UNBOUNDED
+
+            elif mz_result.status == MzStatus.ALL_SOLUTIONS:
+                status = ALL_SOLUTIONS
+
+            elif mz_result.status == MzStatus.UNKNOWN:
+                if result.solve_time > options.time_limit:
+                    status = TIMEOUT
+                else:
+                    status = UNKNOWN
+
+            else:
+                status = ERROR
+
+            result.status = status
 
             for key, value in statistics.items():
                 log.debug(f'"{name}" {key} = {value}')
-            yield result
-            previous = result
+                
+            log.log(
+                logging.INFO if status.has_solution else logging.ERROR,
+                f'"{name}" returned "{status.name}" after {result.elapsed}',
+            )
+            continue
 
-    except Exception as e:
-        result.error = e.args[0]
-        result.status = Status.ERROR
-        log.error(f"{type(e).__name__}: {result.error}")
+        # An intermediate solution has been given
+        objective: Optional[int] = None
+        bound: Optional[int] = None
+        abs_gap: Optional[int] = None
+        rel_gap: Optional[float] = None
+        abs_delta: Optional[int] = None
+        rel_delta: Optional[float] = None
 
-    yield result
+        # Extract objective
+        if (objective := mz_result.objective) is not None:  # type:ignore
+            result.objective = int(objective)
+            objective = result.objective
+
+        # Extract objective bound
+        if (bound := statistics.pop("objectiveBound", None)) is not None:  # type:ignore
+            if math.isfinite(bound):
+                result.objective_bound = int(bound)
+                bound = result.objective_bound
+
+        # Calculate absolute gap
+        if bound is not None and objective is not None:
+            abs_gap = abs(objective - bound)
+
+        # Calculate relative gap
+        if abs_gap is not None and bound:
+            rel_gap = abs_gap / bound
+
+        # Calculate absolute delta
+        if (objective is not None) and (previous.objective is not None):
+            abs_delta = abs(objective - previous.objective)
+
+        # Calculate relative delta
+        if previous.relative_gap is not None and rel_gap is not None:
+            rel_delta = previous.relative_gap - rel_gap
+
+        # Assign to solution
+        result.objective = objective
+        result.objective_bound = bound
+        result.absolute_gap = abs_gap
+        result.relative_gap = rel_gap
+        result.absolute_delta = abs_delta
+        result.relative_delta = rel_delta
+
+        # Extract solved variables
+        for var in variables:
+            value = mz_result[var]
+            result.variables[var] = value
+
+        if rel_gap is not None:
+            log.debug(
+                f'"{name}" solution {result.iteration} has objective {result.objective} and gap {rel_gap:.2%} after {result.elapsed}'
+            )
+        elif objective is not None:
+            log.debug(
+                f'"{name}" solution {result.iteration} has objective {result.objective} after {result.elapsed}'
+            )
+        else:
+            log.debug(
+                f'"{name}" solution {result.iteration} found after {result.elapsed}'
+            )
+
+        for key, value in statistics.items():
+            log.debug(f'"{name}" {key} = {value}')
+        yield result
+        previous = result
     return
 
 
-async def best_solution(model: str, options: SolveOptions, **kwargs) -> Result:
+async def solution(model: str, options: SolveOptions, **kwargs) -> SolveResult:
     """
     Solve the model, returning only the last (and best) solution.
 
     For intermediate solutions use the `solutions` function
     """
-    result = Result()
+    result = SolveResult()
 
     async for result in solve(model, options=options, **kwargs):
         pass
@@ -599,12 +572,12 @@ async def best_solution(model: str, options: SolveOptions, **kwargs) -> Result:
 
 async def satisfy(
     model: str, options: SolveOptions, parameters=None, **kwargs
-) -> Result:
+) -> SolveResult:
     """
     Solve the model and return the first satisfactory solution
     """
     kwargs = kwargs | dict(all_solutions=False)
-    result = await best_solution(
+    result = await solution(
         model, options=options, parameters=parameters, **kwargs
     )
     return result
@@ -612,11 +585,11 @@ async def satisfy(
 
 async def all_solutions(
     model: str, options: SolveOptions, parameters=None, **kwargs
-) -> Tuple[List[Result], Result]:
+) -> Tuple[List[SolveResult], SolveResult]:
     """
     Solve the model returning all satisfactory solutions
     """
-    last_result = Result()
+    last_result = SolveResult()
     solutions = []
     kwargs = kwargs | dict(all_solutions=True)
 

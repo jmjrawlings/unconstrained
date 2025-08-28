@@ -90,7 +90,7 @@ def to_duration(*args, **kwargs) -> Duration:
     arg = args[0]
 
     if isinstance(arg, Interval):
-        return arg.as_interval()
+        return arg.as_duration()
 
     elif isinstance(arg, Duration):
         return arg
@@ -281,7 +281,7 @@ def to_path(value: Union[Path, str], existing=False, is_file=True) -> Path:
         return path
 
 
-def to_filename(s):
+def to_filename(s) -> str:
     import string
 
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)

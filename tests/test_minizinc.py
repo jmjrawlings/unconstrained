@@ -3,7 +3,7 @@ Tests for the minizinc api
 """
 
 from unconstrained import minizinc as mz
-from pytest import mark, fixture
+from pytest import mark, fixture, raises
 
 
 @fixture
@@ -43,7 +43,7 @@ async def test_solve_satisfy(minizinc_options):
 
 
 async def test_solve_optimise(minizinc_options):
-    result = await mz.best_solution(
+    result = await mz.solution(
         """
         var 1..10: a;
         var 1..10: b;
@@ -60,16 +60,16 @@ async def test_solve_optimise(minizinc_options):
 
 
 async def test_syntax_error(minizinc_options):
-    result = await mz.best_solution(
-        """
-        var 1 @#$  %$$%@@@323.10: a;
-        var bool: b;
-        """,
-        minizinc_options,
-        name='test syntax'
-        )
-    assert result.error
-    assert result.status == mz.ERROR
+    with raises(Exception):
+        await mz.solution(
+            """
+            var 1 @#$  %$$%@@@323.10: a;
+            var bool: b;
+            """,
+            minizinc_options,
+            name='test syntax'
+            )
+        
 
 
 async def test_solve_all_solutions(minizinc_options : mz.SolveOptions):
@@ -87,7 +87,7 @@ async def test_solve_all_solutions(minizinc_options : mz.SolveOptions):
 
 @mark.filterwarnings("ignore:model inconsistency")
 async def test_solve_unsatisfiable_model(minizinc_options):
-    result = await mz.best_solution(
+    result = await mz.solution(
         """
         var 1..1: a;
         var 2..2: b;
@@ -98,20 +98,18 @@ async def test_solve_unsatisfiable_model(minizinc_options):
         )
     assert result.status == mz.UNSATISFIABLE
 
-
 async def test_recursive_predicate_fails(minizinc_options):
-    result = await mz.best_solution(
-        """
-        predicate recurse(var int: a) =
-            recurse(a);
-  
-        var 1..10: x;
-        constraint recurse(x);
-        """,
-        minizinc_options
-        )
-    assert result.error
-    assert result.status == mz.ERROR
+    with raises(Exception):
+        await mz.solution(
+            """
+            predicate recurse(var int: a) =
+                recurse(a);
+    
+            var 1..10: x;
+            constraint recurse(x);
+            """,
+            minizinc_options
+            )
 
 
 
